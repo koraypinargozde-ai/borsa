@@ -16,6 +16,11 @@ jobs:
           python-version: "3.11"
       - run: pip install yfinance pandas
       - run: python scan.py
+      - run: python post.py
+        continue-on-error: true
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT }}
       - run: |
           git config user.name "bot"
           git config user.email "bot@users.noreply.github.com"
