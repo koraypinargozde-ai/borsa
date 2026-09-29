@@ -21,6 +21,8 @@ jobs:
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT: ${{ secrets.TG_CHAT }}
+      - run: python defter.py
+        continue-on-error: true
       - run: |
           git config user.name "bot"
           git config user.email "bot@users.noreply.github.com"
