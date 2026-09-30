@@ -246,7 +246,12 @@ document.addEventListener("click",function(e){
 });
 document.getElementById("q").addEventListener("input",function(e){S.q=e.target.value.trim().toUpperCase();draw()});
 document.getElementById("fark").innerHTML=fark();
-document.getElementById("sonuc").innerHTML=sonuc();
+document.getElementById("sonuc").innerHTML=sonuc(); 
+var XU=null;
+function guclu(r){return r[1]>=70&&r[4]>=2&&r[3]>=3&&r[3]<=8&&(XU==null||r[3]>XU)}
+var draw0=draw;
+draw=function(){draw0();document.querySelectorAll("#rows .item").forEach(function(it){var s=it.querySelector(".sym");if(!s)return;var k=s.textContent.replace(/[^A-Z0-9]/g,"");var r=D.filter(function(z){return z[0]===k})[0];if(!r||!guclu(r))return;s.insertAdjacentHTML("beforeend"," <b class='up'>★</b>");var dd=it.querySelectorAll(".det dd");if(dd.length)dd[dd.length-1].insertAdjacentHTML("afterbegin","<span class='tag'>GÜÇLÜ</span>")})};
+fetch("xu.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){XU=j.c;draw()}).catch(function(){});
 draw();
 fetch("xu.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){var d=document.createElement("div");d.className="top";d.innerHTML="<div><b class='"+(j.c>=0?"up":"dn")+"'>"+(j.c>0?"+":"")+f1(j.c)+"%</b><span>BIST 100 bugün</span></div>";document.getElementById("top").before(d)}).catch(function(){});
 </script></body></html>'''
