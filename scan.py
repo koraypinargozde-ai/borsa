@@ -1,4 +1,5 @@
 import yfinance as yf, datetime, os
+import numpy as np
 
 T = """AKBNK ARCLK ASELS ASTOR BIMAS BRISA CCOLA CIMSA DOAS DOHOL EKGYO ENJSA ENKAI EREGL FROTO GARAN GUBRF HALKB HEKTS ISCTR KCHOL KONTR KOZAL KRDMD MGROS ODAS OYAKC PETKM PGSUS SAHOL SASA SISE SOKM TAVHL TCELL THYAO TKFEN TOASO TSKB TTKOM TUPRS ULKER VAKBN VESTL YKBNK
 A1CAP A1YEN AAGYO ACSEL ADEL ADGYO AEFES AGHOL AGROT AHGAZ AKCNS AKENR AKFGY AKFYE AKGRT AKSA AKSEN ALARK ALBRK ALCAR ALFAS ALGYO ALKIM ALKLC ALTNY ANELE ANGEN ANHYT ANSGR ARASE ARDYZ ARENA ARSAN ARTMS ARZUM ASGYO ASUZU ATAGY ATAKP ATATP ATEKS ATLAS AVGYO AVHOL AVOD AVTUR AYCES AYDEM AYEN AYGAZ AZTEK
@@ -17,6 +18,7 @@ VAKFN VAKKO VANGD VBTYZ VERTU VERUS VESBE VKFYO VKGYO VKING VRGYO YAPRK YATAS YA
 tick = [t + ".IS" for t in dict.fromkeys(T)]
 rows = []
 now = datetime.datetime.utcnow() + datetime.timedelta(hours=3)
+dk = now.hour * 60 + now.minute
 
 for i in range(0, len(tick), 50):
     grup = tick[i:i + 50]
@@ -37,17 +39,30 @@ for i in range(0, len(tick), 50):
             av = pr["Volume"].mean()
             if not av or av * z["Close"] < 2_000_000:
                 continue
-            vr = z["Volume"] / av 
-            if x.index[-1].date() == now.date() and now.hour * 60 + now.minute < 1090: vr = vr / max(0.15, min(1, (now.hour * 60 + now.minute - 600) / 480))
+            vr = z["Volume"] / av
+            if x.index[-1].date() == now.date() and dk < 1090:
+                vr = vr / max(0.15, min(1, max(0, (dk - 600) / 480) ** 0.5))
             pos = (z["Close"] - z["Low"]) / (z["High"] - z["Low"]) if z["High"] > z["Low"] else 0.5
-            chg = (z["Close"] / p["Close"] - 1) * 100 
-            if __import__("numpy").busday_count(x.index[-2].date(), x.index[-1].date()) > 1: chg = (z["Close"] / yf.Ticker(t).fast_info["previousClose"] - 1) * 100
-            brk = z["Close"] > pr["High"].max() 
-            if x.index[-1].date() == now.date() and now.hour * 60 + now.minute < 1090: vr = z["Volume"] / av / max(0.15, min(1, max(0, (now.hour * 60 + now.minute - 600) / 480) ** 0.5))
+            chg = (z["Close"] / p["Close"] - 1) * 100
+            if np.busday_count(x.index[-2].date(), x.index[-1].date()) > 1:
+                chg = (z["Close"] / yf.Ticker(t).fast_info["previousClose"] - 1) * 100
+            brk = z["Close"] > pr["High"].max()
+
+            # Para girisi: CMF (20 gun) + onceki 2 gunun hacim teyidi
+            h = x.iloc[-20:]
+            rg = (h["High"] - h["Low"]).replace(0, float("nan"))
+            mf = (((h["Close"] - h["Low"]) - (h["High"] - h["Close"])) / rg).fillna(0)
+            cmf = float((mf * h["Volume"]).sum() / h["Volume"].sum())
+            vk = float(x["Volume"].iloc[-3:-1].mean() / av)
+            pg = bool(cmf > 0.15 and vk >= 1.2)
+
             sc = min(vr, 4) / 4 * 40 + pos * 25 + max(0, min(chg, 10)) / 10 * 20 + (15 if brk else 0)
+            if pg:
+                sc += 10
             if chg <= 0:
                 sc *= 0.3
-            rows.append((t[:-3], z["Close"], chg, vr, pos * 100, brk, sc, x.index[-1].strftime("%d.%m.%Y")))
+            rows.append((t[:-3], z["Close"], chg, vr, pos * 100, brk, sc,
+                         x.index[-1].strftime("%d.%m.%Y"), pg))
         except Exception:
             continue
 
@@ -56,7 +71,7 @@ veri_tarihi = rows[0][7] if rows else "-"
 
 satirlar = ""
 for r in rows[:40]:
-    notlar = ("Tavana yakın " if r[2] >= 7 else "") + ("Kırılım" if r[5] else "")
+    notlar = ("Tavana yakın " if r[2] >= 7 else "") + ("Kırılım " if r[5] else "") + ("💰Para girişi" if r[8] else "")
     satirlar += (f"<tr><td>{r[0]}</td><td class=s>{r[6]:.0f}</td><td>{r[1]:.2f}</td>"
                  f"<td>{r[2]:.1f}</td><td>{r[3]:.1f}x</td><td>{r[4]:.0f}</td><td>{notlar}</td></tr>")
 
@@ -74,13 +89,13 @@ th:first-child,td:first-child{text-align:left;font-weight:600}th{color:var(--m);
 </style></head><body><main><h1>BIST Tavan Adayı Tarayıcı</h1>
 <p>Veri tarihi: __VT__ · Güncelleme: __GT__ · Veri gecikmelidir (Yahoo Finance)</p>
 <div class=w><table><tr><th>Hisse</th><th>Puan</th><th>Fiyat</th><th>Değ.%</th><th>Hacim</th><th>Kapanış%</th><th>Not</th></tr>__S__</table></div>
-<p>Filtre amaçlıdır, yatırım tavsiyesi değildir. Puan: hacim patlaması, güçlü kapanış, yükseliş ve 20 günlük direnç kırılımından hesaplanır.</p>
+<p>Filtre amaçlıdır, yatırım tavsiyesi değildir. Puan: hacim patlaması, güçlü kapanış, yükseliş, 20 günlük direnç kırılımı ve para girişi teyidinden hesaplanır.</p>
 </main></body></html>"""
 
 html = html.replace("__VT__", veri_tarihi).replace("__GT__", now.strftime("%d.%m.%Y %H:%M")).replace("__S__", satirlar)
 os.makedirs("docs", exist_ok=True)
 open("docs/index.html", "w", encoding="utf-8").write(html)
-print(len(rows), "hisse listelendi") 
+print(len(rows), "hisse listelendi", sum(1 for r in rows[:40] if r[8]), "adet para girişi")
 try:
     fi = yf.Ticker("XU100.IS").fast_info
     xu = round((fi["lastPrice"] / fi["previousClose"] - 1) * 100, 2)
