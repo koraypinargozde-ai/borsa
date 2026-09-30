@@ -18,6 +18,8 @@ def oku():
             n.append("Tavana yakın")
         if "Kırılım" in r[6]:
             n.append("20 günlük kırılım")
+        if "Para" in r[6]:
+            n.append("Para girişi")
         rows.append([r[0], int(r[1]), float(r[2]), float(r[3]), float(r[4]), int(r[5]), " · ".join(n)])
     return m.group(1), m.group(2), rows
 
