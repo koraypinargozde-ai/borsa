@@ -80,4 +80,10 @@ th:first-child,td:first-child{text-align:left;font-weight:600}th{color:var(--m);
 html = html.replace("__VT__", veri_tarihi).replace("__GT__", now.strftime("%d.%m.%Y %H:%M")).replace("__S__", satirlar)
 os.makedirs("docs", exist_ok=True)
 open("docs/index.html", "w", encoding="utf-8").write(html)
-print(len(rows), "hisse listelendi")
+print(len(rows), "hisse listelendi") 
+try:
+    fi = yf.Ticker("XU100.IS").fast_info
+    xu = round((fi["lastPrice"] / fi["previousClose"] - 1) * 100, 2)
+    open("docs/xu.json", "w").write('{"c":%s}' % xu)
+except Exception as e:
+    print("endeks hata", e)
