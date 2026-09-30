@@ -71,6 +71,7 @@ function ciz(){
    else if(x.s&&kz<=-x.s+2)dur=' <span class="tag">Stopa yakın</span>';
    else if(x.h&&kz>=x.h)dur=' <span class="tag up2">Hedefe ulaştı</span>';
   }
+  if(typeof V!=="undefined"&&V.rows){var lr=V.rows.filter(function(z){return z[0]===x.t})[0];if(!lr)dur+=' <span class="tag dn2">ÇIKIŞ: listeden düştü</span>';else if(lr[1]<50)dur+=' <span class="tag dn2">ÇIKIŞ: puan '+lr[1]+'</span>';}
   h+='<div class="dp"><div><b>'+x.t+'</b> <span class="tag">'+(x.r==="g"?"Gerçek":"Deneme")+'</span>'+dur+'</div>'+
    '<div>Giriş '+f2(x.px)+(x.a?" · "+x.a+" adet":"")+(cur?" · Şimdi "+f2(cur):" · fiyat yok")+'</div>'+
    (kz==null?"":'<div class="'+(kz>=0?"up":"dn")+'">'+sg(kz)+(x.a?" ("+f2((cur-x.px)*x.a)+" TL)":"")+'</div>')+
