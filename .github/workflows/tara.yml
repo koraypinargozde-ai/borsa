@@ -1,7 +1,7 @@
 name: tara
 on:
   schedule:
-    - cron: "30 9 * * 1-5"
+    - cron: "7,22,37,52 7-14 * * 1-5"
     - cron: "30 15 * * 1-5"
   workflow_dispatch:
 permissions:
