@@ -42,7 +42,8 @@ for i in range(0, len(tick), 50):
             pos = (z["Close"] - z["Low"]) / (z["High"] - z["Low"]) if z["High"] > z["Low"] else 0.5
             chg = (z["Close"] / p["Close"] - 1) * 100 
             if __import__("numpy").busday_count(x.index[-2].date(), x.index[-1].date()) > 1: chg = (z["Close"] / yf.Ticker(t).fast_info["previousClose"] - 1) * 100
-            brk = z["Close"] > pr["High"].max()
+            brk = z["Close"] > pr["High"].max() 
+            if x.index[-1].date() == now.date() and now.hour * 60 + now.minute < 1090: vr = z["Volume"] / av / max(0.15, min(1, max(0, (now.hour * 60 + now.minute - 600) / 480) ** 0.5))
             sc = min(vr, 4) / 4 * 40 + pos * 25 + max(0, min(chg, 10)) / 10 * 20 + (15 if brk else 0)
             if chg <= 0:
                 sc *= 0.3
