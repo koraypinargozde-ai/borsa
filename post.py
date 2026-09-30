@@ -248,6 +248,7 @@ document.getElementById("q").addEventListener("input",function(e){S.q=e.target.v
 document.getElementById("fark").innerHTML=fark();
 document.getElementById("sonuc").innerHTML=sonuc();
 draw();
+fetch("xu.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){var d=document.createElement("div");d.className="top";d.innerHTML="<div><b class='"+(j.c>=0?"up":"dn")+"'>"+(j.c>0?"+":"")+f1(j.c)+"%</b><span>BIST 100 bugün</span></div>";document.getElementById("top").before(d)}).catch(function(){});
 </script></body></html>'''
 
 
