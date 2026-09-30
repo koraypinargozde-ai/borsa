@@ -37,7 +37,8 @@ for i in range(0, len(tick), 50):
             av = pr["Volume"].mean()
             if not av or av * z["Close"] < 2_000_000:
                 continue
-            vr = z["Volume"] / av
+            vr = z["Volume"] / av 
+            if x.index[-1].date() == now.date() and now.hour * 60 + now.minute < 1090: vr = vr / max(0.15, min(1, (now.hour * 60 + now.minute - 600) / 480))
             pos = (z["Close"] - z["Low"]) / (z["High"] - z["Low"]) if z["High"] > z["Low"] else 0.5
             chg = (z["Close"] / p["Close"] - 1) * 100 
             if __import__("numpy").busday_count(x.index[-2].date(), x.index[-1].date()) > 1: chg = (z["Close"] / yf.Ticker(t).fast_info["previousClose"] - 1) * 100
