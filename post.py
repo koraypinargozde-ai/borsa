@@ -51,10 +51,12 @@ def sonuclari_bul(hist, kes):
         if x["d"] not in g:
             continue
         p = g.index(x["d"])
+        # ilk gorulme kaydi (ps) varsa getiri o anki fiyattan, yoksa gunun kapanisindan olculur
+        taban = x["px"] if x.get("ps") else f[p]
         if x["r1"] is None and p + 1 < len(g):
-            x["r1"] = round(float(f[p + 1] / f[p] - 1) * 100, 2)
+            x["r1"] = round(float(f[p + 1] / taban - 1) * 100, 2)
         if x["r3"] is None and p + 3 < len(g):
-            x["r3"] = round(float(f[p + 3] / f[p] - 1) * 100, 2)
+            x["r3"] = round(float(f[p + 3] / taban - 1) * 100, 2)
 
 
 def bant(hist, ad, lo, hi):
@@ -65,6 +67,26 @@ def bant(hist, ad, lo, hi):
         return round(sum(x[k] for x in l) / len(l), 2) if l else None
     poz = round(100 * sum(x["r1"] > 0 for x in a) / len(a)) if a else None
     return [ad, len(a), ort(a, "r1"), poz, ort(b, "r3")]
+
+
+def ilk_gor(rows, d, simdi):
+    # Her hissenin o gun listede ILK gorundugu saat ve fiyat (docs/ilk.json).
+    # Veri tarihi bugun degilse (bayat veri) yeni kayit yazilmaz.
+    F = D + "ilk.json"
+    try:
+        st = json.load(open(F)) if os.path.exists(F) else {}
+    except Exception:
+        st = {}
+    if st.get("d") != d:
+        st = {"d": d, "h": {}}
+    if d != simdi.strftime("%Y-%m-%d"):
+        return st["h"]
+    saat = simdi.strftime("%H:%M")
+    for r in rows:
+        if r[0] not in st["h"]:
+            st["h"][r[0]] = {"p": r[2], "s": saat}
+    json.dump(st, open(F, "w"), separators=(",", ":"))
+    return st["h"]
 
 
 def telegram(rows, d, gt):
@@ -210,7 +232,7 @@ function sonuc(){
   if(!say)return h+"<p>Henüz sonuç yok. Bir hisse listeye girdikten sonraki ilk iş gününün kapanışında burada birikmeye başlar.</p>";
   h+="<table class=st><tr><th>Puan</th><th>Adet</th><th>Ertesi gün</th><th>Yükselen</th><th>3 gün</th></tr>";
   V.stats.forEach(function(b){h+="<tr><td>"+b[0]+"</td><td>"+b[1]+"</td><td>"+(b[2]==null?"-":sg(b[2])+"%")+"</td><td>"+(b[3]==null?"-":"%"+b[3])+"</td><td>"+(b[4]==null?"-":sg(b[4])+"%")+"</td></tr>"});
-  return h+"</table><p>Getiriler, hissenin listeye girdiği günün kapanışına göre. Örnek sayısı azken yanıltıcı olabilir.</p>";
+  return h+"</table><p>Getiriler, hissenin o gün listede ilk göründüğü fiyata göre (eski kayıtlarda günün kapanışına göre). Örnek sayısı azken yanıltıcı olabilir.</p>";
 }
 function draw(){
   document.getElementById("meta").textContent="Veri tarihi "+V.vt+" · Güncelleme "+V.gt+" · Veri gecikmelidir (Yahoo Finance)";
@@ -228,6 +250,7 @@ function draw(){
   el.innerHTML=rows.map(function(r){
     var o=S.open===r[0];
     var dl=r[7]==="y"?"Listeye yeni girdi":(r[7]==null?"-":sg(r[7])+" puan");
+    var il=r[8]?r[8][0]+" · "+fmt(r[8][1])+" TL":"-";
     return '<div class="item'+(o?" open":"")+'"><button class="row" data-o="'+r[0]+'" aria-expanded="'+o+'">'+
       '<span class="sym">'+r[0]+'</span>'+
       '<span class="sc"><span class="bar"><i style="width:'+r[1]+'%"></i></span><em>'+r[1]+'</em></span>'+
@@ -235,6 +258,7 @@ function draw(){
       '<span class="r">'+f1(r[4])+'x</span></button>'+
       '<div class="det"><dl><dt>Fiyat</dt><dd>'+fmt(r[2])+' TL</dd><dt>Kapanış gücü</dt><dd>%'+r[5]+'</dd>'+
       '<dt>Dünden</dt><dd>'+dl+'</dd>'+
+      '<dt>İlk görüldü</dt><dd>'+il+'</dd>'+
       '<dt>Sinyal</dt><dd>'+(r[6]?r[6].split(" · ").map(function(t){return '<span class="tag">'+t+'</span>'}).join(""):"Belirgin sinyal yok")+'</dd></dl>'+
       '<a href="https://finance.yahoo.com/quote/'+r[0]+'.IS" target="_blank" rel="noopener">Yahoo Finance ile aç</a></div></div>'}).join("");
 }
@@ -270,6 +294,8 @@ def main():
     kapanis = simdi.hour * 60 + simdi.minute >= 18 * 60 + 15
     kes = simdi.strftime("%Y-%m-%d") if kapanis else (simdi - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
+    ilk = ilk_gor(rows, d, simdi)
+
     G = D + "gecmis.json"
     hist = json.load(open(G)) if os.path.exists(G) else []
     gunler = sorted({x["d"] for x in hist if x["d"] < d})
@@ -277,8 +303,14 @@ def main():
     onc = {x["t"]: x["sc"] for x in hist if x["d"] == onc_gun}
 
     if kapanis:
-        hist = [x for x in hist if x["d"] != d] + [
-            {"d": d, "t": r[0], "sc": r[1], "px": r[2], "r1": None, "r3": None} for r in rows]
+        kayit = []
+        for r in rows:
+            k = {"d": d, "t": r[0], "sc": r[1], "px": r[2], "r1": None, "r3": None}
+            if r[0] in ilk:
+                k["px"] = ilk[r[0]]["p"]
+                k["ps"] = ilk[r[0]]["s"]
+            kayit.append(k)
+        hist = [x for x in hist if x["d"] != d] + kayit
     sinir = (simdi - datetime.timedelta(days=120)).strftime("%Y-%m-%d")
     hist = [x for x in hist if x["d"] >= sinir]
     sonuclari_bul(hist, kes)
@@ -286,6 +318,7 @@ def main():
 
     for r in rows:
         r.append(None if not onc else ("y" if r[0] not in onc else r[1] - onc[r[0]]))
+        r.append([ilk[r[0]]["s"], ilk[r[0]]["p"]] if r[0] in ilk else None)
     bugun = {r[0] for r in rows}
     veri = {
         "vt": vt, "gt": gt, "rows": rows,
