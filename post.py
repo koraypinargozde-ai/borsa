@@ -226,13 +226,25 @@ function fark(){
   h+="<p><b>Listeden düşenler:</b> "+(V.dusen.length?V.dusen.join(", "):"yok")+"</p>";
   return h;
 }
+function rt(v){return v==null?"<span style='color:var(--mute)'>-</span>":"<span class='"+(v>=0?"up":"dn")+"'>"+sg(v)+"%</span>"}
 function sonuc(){
   var h="<summary>Sinyal sonrası ne oldu?</summary>";
   var say=V.stats.reduce(function(a,b){return a+b[1]},0);
-  if(!say)return h+"<p>Henüz sonuç yok. Bir hisse listeye girdikten sonraki ilk iş gününün kapanışında burada birikmeye başlar.</p>";
-  h+="<table class=st><tr><th>Puan</th><th>Adet</th><th>Ertesi gün</th><th>Yükselen</th><th>3 gün</th></tr>";
-  V.stats.forEach(function(b){h+="<tr><td>"+b[0]+"</td><td>"+b[1]+"</td><td>"+(b[2]==null?"-":sg(b[2])+"%")+"</td><td>"+(b[3]==null?"-":"%"+b[3])+"</td><td>"+(b[4]==null?"-":sg(b[4])+"%")+"</td></tr>"});
-  return h+"</table><p>Getiriler, hissenin o gün listede ilk göründüğü fiyata göre (eski kayıtlarda günün kapanışına göre). Örnek sayısı azken yanıltıcı olabilir.</p>";
+  if(!say){
+    h+="<p>Henüz sonuç yok. Bir hisse listeye girdikten sonraki ilk iş gününün kapanışında burada birikmeye başlar.</p>";
+  }else{
+    h+="<table class=st><tr><th>Puan</th><th>Adet</th><th>Ertesi gün</th><th>Yükselen</th><th>3 gün</th></tr>";
+    V.stats.forEach(function(b){h+="<tr><td>"+b[0]+"</td><td>"+b[1]+"</td><td>"+(b[2]==null?"-":sg(b[2])+"%")+"</td><td>"+(b[3]==null?"-":"%"+b[3])+"</td><td>"+(b[4]==null?"-":sg(b[4])+"%")+"</td></tr>"});
+    h+="</table>";
+  }
+  if(V.son&&V.son.length){
+    h+="<p><b>Son sinyaller (puan 70+)</b></p><table class=st><tr><th>Hisse</th><th>İlk fiyat</th><th>Ertesi gün</th><th>3 gün</th></tr>";
+    V.son.forEach(function(x){
+      h+="<tr><td>"+x[0]+"<br><small style='color:var(--mute)'>"+x[1]+" "+(x[2]||"kapanış")+" · "+x[6]+" puan</small></td><td>"+fmt(x[3])+"</td><td>"+rt(x[4])+"</td><td>"+rt(x[5])+"</td></tr>";
+    });
+    h+="</table>";
+  }
+  return h+"<p>Getiriler, hissenin o gün listede ilk göründüğü fiyata göre (eski kayıtlarda günün kapanışına göre). Bugünkü sinyallerin sonucu sonraki günlerde dolar. Örnek sayısı azken yanıltıcı olabilir.</p>";
 }
 function draw(){
   document.getElementById("meta").textContent="Veri tarihi "+V.vt+" · Güncelleme "+V.gt+" · Veri gecikmelidir (Yahoo Finance)";
@@ -279,7 +291,8 @@ var draw0=draw;
 draw=function(){draw0();document.querySelectorAll("#rows .item").forEach(function(it){var s=it.querySelector(".sym");if(!s)return;var k=s.textContent.replace(/[^A-Z0-9]/g,"");var r=D.filter(function(z){return z[0]===k})[0];if(!r||!guclu(r))return;s.insertAdjacentHTML("beforeend"," <b class='up'>★</b>");var dd=it.querySelectorAll(".det dd");if(dd.length)dd[dd.length-1].insertAdjacentHTML("afterbegin","<span class='tag'>GÜÇLÜ</span>")})};
 fetch("xu.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){XU=j.c;draw()}).catch(function(){});
 draw();
-fetch("xu.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){var d=document.createElement("div");d.className="top";d.innerHTML="<div><b class='"+(j.c>=0?"up":"dn")+"'>"+(j.c>0?"+":"")+f1(j.c)+"%</b><span>BIST 100 bugün</span></div>";document.getElementById("top").before(d)}).catch(function(){});
+function baskin(j){var s=0,n=[];if(j.a!=null&&j.d!=null&&j.a+j.d>0){var o=j.a/(j.a+j.d);s+=o>=0.55?1:(o<=0.45?-1:0);n.push("yükselen "+j.a+" / düşen "+j.d)}if(j.v!=null){s+=j.v>0?1:(j.v<0?-1:0);n.push(j.v>0?"VWAP üstünde":(j.v<0?"VWAP altında":"VWAP civarında"))}if(!n.length)return null;return [s>=1?"Alıcı baskın":(s<=-1?"Satıcı baskın":"Dengeli"),s,n.join(" · ")]}
+fetch("xu.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){var b=baskin(j);var d=document.createElement("div");d.className="top";d.innerHTML="<div><b class='"+(j.c>=0?"up":"dn")+"'>"+(j.c>0?"+":"")+f1(j.c)+"%</b><span>BIST 100 bugün"+(b?" · <strong class='"+(b[1]>=1?"up":(b[1]<=-1?"dn":"x"))+"'>"+b[0]+"</strong>":"")+"</span>"+(b?"<span style='display:block'>"+b[2]+"</span>":"")+"</div>";document.getElementById("top").before(d)}).catch(function(){});
 function erken(r){var t=r[6]+"";return r[1]>=60&&r[3]>=0.5&&r[3]<=5&&r[4]>=2&&r[5]>=60&&t.indexOf("Para")>=0&&t.indexOf("Tavana")<0&&(XU==null||r[3]>XU)}
 F.push(["early","Erken aday"]);
 var pass0=pass;
@@ -329,6 +342,18 @@ def main():
         r.append(None if not onc else ("y" if r[0] not in onc else r[1] - onc[r[0]]))
         r.append([ilk[r[0]]["s"], ilk[r[0]]["p"], ilk[r[0]].get("c")] if r[0] in ilk else None)
     bugun = {r[0] for r in rows}
+
+    # Son sinyaller (puan 70+): bugunku satirlar + gecmis kayitlar, hisse adi ve ilk gorulme fiyatiyla
+    def gm(t):
+        return t[8:10] + "." + t[5:7]
+    bugun_son = [[r[0], gm(d), ilk[r[0]]["s"] if r[0] in ilk else None,
+                  ilk[r[0]]["p"] if r[0] in ilk else r[2], None, None, r[1]]
+                 for r in rows if r[1] >= 70][:8]
+    gecmis_son = [[x["t"], gm(x["d"]), x.get("ps"), x["px"], x["r1"], x["r3"], x["sc"]]
+                  for x in sorted((x for x in hist if x["sc"] >= 70 and x["d"] != d),
+                                  key=lambda x: (x["d"], x["sc"]), reverse=True)]
+    son = (bugun_son + gecmis_son)[:20]
+
     veri = {
         "vt": vt, "gt": gt, "rows": rows,
         "onceki": ".".join(reversed(onc_gun.split("-"))) if onc_gun else None,
@@ -336,6 +361,7 @@ def main():
         "dusen": [t for t in onc if t not in bugun],
         "sic": [[r[0], onc[r[0]], r[1]] for r in rows if r[0] in onc and r[1] - onc[r[0]] >= 15],
         "stats": [bant(hist, "70+", 70, 101), bant(hist, "50-69", 50, 70), bant(hist, "0-49", 0, 50)],
+        "son": son,
     }
     telegram(rows, d, gt)
     uygulama_dosyalari()
