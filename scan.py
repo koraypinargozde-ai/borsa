@@ -48,13 +48,35 @@ for i in range(0, len(tick), 50):
                 chg = (z["Close"] / yf.Ticker(t).fast_info["previousClose"] - 1) * 100
             brk = z["Close"] > pr["High"].max()
 
-            # Para girisi: CMF (20 gun) + onceki 2 gunun hacim teyidi
+            # Para girisi: CMF + onceki 2 gunun hacim teyidi
             h = x.iloc[-20:]
             rg = (h["High"] - h["Low"]).replace(0, float("nan"))
             mf = (((h["Close"] - h["Low"]) - (h["High"] - h["Close"])) / rg).fillna(0)
             cmf = float((mf * h["Volume"]).sum() / h["Volume"].sum())
             vk = float(x["Volume"].iloc[-3:-1].mean() / av)
-            pg = bool(cmf > 0.15 and vk >= 1.2)
+
+            # Ek para akisi gostergeleri
+            # 1) 20 gunluk VWAP (gunluk cubuklardan, tipik fiyat x hacim)
+            tp = (h["High"] + h["Low"] + h["Close"]) / 3
+            vwap = float((tp * h["Volume"]).sum() / h["Volume"].sum())
+            vwap_ok = bool(z["Close"] > vwap)
+            # 2) Yukari/asagi hacim orani (20 gun)
+            h21 = x.iloc[-21:]
+            dif = h21["Close"].diff().iloc[1:]
+            vol21 = h21["Volume"].iloc[1:]
+            up = float(vol21[dif > 0].sum())
+            dn = float(vol21[dif < 0].sum())
+            udr = (up / dn) if dn > 0 else 3.0
+            udr_ok = bool(udr >= 1.2)
+            # 3) OBV trendi (son 10 gun yukari mi)
+            sg = np.sign(h21["Close"].diff()).fillna(0)
+            obv = (sg * h21["Volume"]).cumsum()
+            obv_ok = bool(obv.iloc[-1] > obv.iloc[-11])
+            ek = int(vwap_ok) + int(udr_ok) + int(obv_ok)
+
+            # Gun ici dusen / zayif kapanan hisse para girisi alamaz
+            gun_ok = bool(chg > 0 and pos >= 0.5)
+            pg = bool(cmf > 0.15 and vk >= 1.2 and gun_ok and ek >= 2)
 
             sc = min(vr, 4) / 4 * 40 + pos * 25 + max(0, min(chg, 10)) / 10 * 20 + (15 if brk else 0)
             if pg:
