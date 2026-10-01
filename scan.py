@@ -121,6 +121,21 @@ print(len(rows), "hisse listelendi", sum(1 for r in rows[:40] if r[8]), "adet pa
 try:
     fi = yf.Ticker("XU100.IS").fast_info
     xu = round((fi["lastPrice"] / fi["previousClose"] - 1) * 100, 2)
-    open("docs/xu.json", "w").write('{"c":%s}' % xu)
+    ya = sum(1 for r in rows if r[2] > 0)
+    du = sum(1 for r in rows if r[2] < 0)
+    vv = "null"
+    try:
+        xh = yf.download("XU100.IS", period="2mo", progress=False, auto_adjust=False)
+        if xh.columns.nlevels > 1:
+            xh.columns = xh.columns.get_level_values(0)
+        hh = xh.dropna().iloc[-20:]
+        tpp = (hh["High"] + hh["Low"] + hh["Close"]) / 3
+        vs = float(hh["Volume"].sum())
+        vw = float((tpp * hh["Volume"]).sum() / vs) if vs > 0 else float(tpp.mean())
+        sn = float(fi["lastPrice"])
+        vv = 1 if sn > vw * 1.002 else (-1 if sn < vw * 0.998 else 0)
+    except Exception as e:
+        print("vwap hata", e)
+    open("docs/xu.json", "w").write('{"c":%s,"a":%d,"d":%d,"v":%s}' % (xu, ya, du, vv))
 except Exception as e:
     print("endeks hata", e)
