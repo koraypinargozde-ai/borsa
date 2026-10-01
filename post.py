@@ -84,7 +84,7 @@ def ilk_gor(rows, d, simdi):
     saat = simdi.strftime("%H:%M")
     for r in rows:
         if r[0] not in st["h"]:
-            st["h"][r[0]] = {"p": r[2], "s": saat}
+            st["h"][r[0]] = {"p": r[2], "s": saat, "c": r[3]}
     json.dump(st, open(F, "w"), separators=(",", ":"))
     return st["h"]
 
@@ -250,7 +250,7 @@ function draw(){
   el.innerHTML=rows.map(function(r){
     var o=S.open===r[0];
     var dl=r[7]==="y"?"Listeye yeni girdi":(r[7]==null?"-":sg(r[7])+" puan");
-    var il=r[8]?r[8][0]+" · "+fmt(r[8][1])+" TL":"-";
+    var il=r[8]?r[8][0]+" · "+fmt(r[8][1])+" TL"+(r[8][2]==null?"":" (%"+sg(r[8][2])+")"):"-";
     return '<div class="item'+(o?" open":"")+'"><button class="row" data-o="'+r[0]+'" aria-expanded="'+o+'">'+
       '<span class="sym">'+r[0]+'</span>'+
       '<span class="sc"><span class="bar"><i style="width:'+r[1]+'%"></i></span><em>'+r[1]+'</em></span>'+
@@ -280,6 +280,13 @@ draw=function(){draw0();document.querySelectorAll("#rows .item").forEach(functio
 fetch("xu.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){XU=j.c;draw()}).catch(function(){});
 draw();
 fetch("xu.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){var d=document.createElement("div");d.className="top";d.innerHTML="<div><b class='"+(j.c>=0?"up":"dn")+"'>"+(j.c>0?"+":"")+f1(j.c)+"%</b><span>BIST 100 bugün</span></div>";document.getElementById("top").before(d)}).catch(function(){});
+function erken(r){var t=r[6]+"";return r[1]>=60&&r[3]>=0.5&&r[3]<=5&&r[4]>=2&&r[5]>=60&&t.indexOf("Para")>=0&&t.indexOf("Tavana")<0&&(XU==null||r[3]>XU)}
+F.push(["early","Erken aday"]);
+var pass0=pass;
+pass=function(r){if(S.f==="early")return (!S.q||r[0].indexOf(S.q)>=0)&&erken(r);return pass0(r)};
+var draw1=draw;
+draw=function(){draw1();document.querySelectorAll("#rows .item").forEach(function(it){var s=it.querySelector(".sym");if(!s)return;var k=s.textContent.replace(/[^A-Z0-9]/g,"");var r=D.filter(function(z){return z[0]===k})[0];if(!r||guclu(r)||!erken(r))return;s.insertAdjacentHTML("beforeend"," <b class='up'>🌱</b>");var dt=it.querySelectorAll(".det dt");for(var i=0;i<dt.length;i++){if(dt[i].textContent==="Sinyal"&&dt[i].nextElementSibling){dt[i].nextElementSibling.insertAdjacentHTML("afterbegin","<span class='tag'>ERKEN</span>")}}})};
+draw();
 </script></body></html>'''
 
 
@@ -309,6 +316,8 @@ def main():
             if r[0] in ilk:
                 k["px"] = ilk[r[0]]["p"]
                 k["ps"] = ilk[r[0]]["s"]
+                if ilk[r[0]].get("c") is not None:
+                    k["c0"] = ilk[r[0]]["c"]
             kayit.append(k)
         hist = [x for x in hist if x["d"] != d] + kayit
     sinir = (simdi - datetime.timedelta(days=120)).strftime("%Y-%m-%d")
@@ -318,7 +327,7 @@ def main():
 
     for r in rows:
         r.append(None if not onc else ("y" if r[0] not in onc else r[1] - onc[r[0]]))
-        r.append([ilk[r[0]]["s"], ilk[r[0]]["p"]] if r[0] in ilk else None)
+        r.append([ilk[r[0]]["s"], ilk[r[0]]["p"], ilk[r[0]].get("c")] if r[0] in ilk else None)
     bugun = {r[0] for r in rows}
     veri = {
         "vt": vt, "gt": gt, "rows": rows,
