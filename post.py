@@ -24,11 +24,19 @@ def oku():
     return m.group(1), m.group(2), rows
 
 
+def eksik(x, s10):
+    # sonucu henuz tamamlanmamis kayit mi?
+    if x["r1"] is None or x["r3"] is None:
+        return True
+    return x["d"] >= s10 and ("mx" in x) and (x["mx"] is None or x["xr3"] is None)
+
+
 def sonuclari_bul(hist, kes):
-    bek = sorted({x["t"] for x in hist if x["r1"] is None or x["r3"] is None})
+    s10 = (datetime.datetime.strptime(kes, "%Y-%m-%d") - datetime.timedelta(days=10)).strftime("%Y-%m-%d")
+    bek = sorted({x["t"] for x in hist if eksik(x, s10)})
     if not bek:
         return
-    tk = [t + ".IS" for t in bek] + ["THYAO.IS", "GARAN.IS"]
+    tk = list(dict.fromkeys([t + ".IS" for t in bek] + ["XU100.IS", "THYAO.IS", "GARAN.IS"]))
     fiyat = {}
     for i in range(0, len(tk), 50):
         try:
@@ -39,15 +47,17 @@ def sonuclari_bul(hist, kes):
             continue
         for t in tk[i:i + 50]:
             try:
-                s = v[t]["Close"].dropna()
+                s = v[t][["Close", "High"]].dropna()
                 s = s[[k.strftime("%Y-%m-%d") <= kes for k in s.index]]
-                fiyat[t[:-3]] = ([k.strftime("%Y-%m-%d") for k in s.index], list(s.values))
+                fiyat[t[:-3]] = ([k.strftime("%Y-%m-%d") for k in s.index],
+                                 list(s["Close"].values), list(s["High"].values))
             except Exception:
                 pass
+    xs = fiyat.get("XU100")
     for x in hist:
         if x["t"] not in fiyat:
             continue
-        g, f = fiyat[x["t"]]
+        g, f, hh = fiyat[x["t"]]
         if x["d"] not in g:
             continue
         p = g.index(x["d"])
@@ -57,6 +67,19 @@ def sonuclari_bul(hist, kes):
             x["r1"] = round(float(f[p + 1] / taban - 1) * 100, 2)
         if x["r3"] is None and p + 3 < len(g):
             x["r3"] = round(float(f[p + 3] / taban - 1) * 100, 2)
+        if "mx" in x:
+            # sonraki 3 islem gunundeki en yuksek fiyat
+            if x["mx"] is None and p + 3 < len(g):
+                x["mx"] = round(float(max(hh[p + 1:p + 4]) / taban - 1) * 100, 2)
+            # BIST 100 getirisi: sinyal anindaki endeks seviyesinden (onceki kapanis x (1 + degisim))
+            if xs and x["d"] in xs[0]:
+                xm = dict(zip(xs[0], xs[1]))
+                q = xs[0].index(x["d"])
+                xc = x.get("xc")
+                xb = xs[1][q - 1] * (1 + xc / 100) if (xc is not None and q >= 1) else xs[1][q]
+                for n, key in ((1, "xr1"), (3, "xr3")):
+                    if x[key] is None and p + n < len(g) and g[p + n] in xm:
+                        x[key] = round(float(xm[g[p + n]] / xb - 1) * 100, 2)
 
 
 def bant(hist, ad, lo, hi):
@@ -69,24 +92,67 @@ def bant(hist, ad, lo, hi):
     return [ad, len(a), ort(a, "r1"), poz, ort(b, "r3")]
 
 
-def ilk_gor(rows, d, simdi):
-    # Her hissenin o gun listede ILK gorundugu saat ve fiyat (docs/ilk.json).
-    # Veri tarihi bugun degilse (bayat veri) yeni kayit yazilmaz.
+def sgrup(sig, kod, ad):
+    # rozet grubu ozeti: adet, bekleyen, 1 gun, 3 gun, en iyi, BIST'e gore 1g, 3g
+    l = [x for x in sig if x["k"] == kod]
+    a = [x for x in l if x["r1"] is not None]
+    b = [x for x in l if x["r3"] is not None]
+    m = [x for x in l if x.get("mx") is not None]
+    f1 = [x["r1"] - x["xr1"] for x in a if x.get("xr1") is not None]
+    f3 = [x["r3"] - x["xr3"] for x in b if x.get("xr3") is not None]
+
+    def ort(v):
+        return round(sum(v) / len(v), 2) if v else None
+    return [ad, len(a), len(l) - len(a), ort([x["r1"] for x in a]), ort([x["r3"] for x in b]),
+            ort([x["mx"] for x in m]), ort(f1), ort(f3)]
+
+
+def xu_c():
+    # BIST 100 bugunku degisim yuzdesi (scan.py yazar)
+    try:
+        return json.load(open(D + "xu.json"))["c"]
+    except Exception:
+        return None
+
+
+def bayrak(r, xc):
+    # P = para girisi, G = GUCLU, E = ERKEN (sayfadaki rozet kurallariyla ayni)
+    t = r[6]
+    para = "Para" in t
+    ustun = xc is None or r[3] > xc
+    k = []
+    if para:
+        k.append("P")
+    if r[1] >= 70 and r[4] >= 3 and 3 <= r[3] <= 8 and para and ustun:
+        k.append("G")
+    elif r[1] >= 60 and 0.5 <= r[3] <= 5 and r[4] >= 2 and r[5] >= 60 and para and "Tavana" not in t and ustun:
+        k.append("E")
+    return k
+
+
+def ilk_gor(rows, d, simdi, xc):
+    # Her hissenin o gun listede ILK gorundugu saat ve fiyat (docs/ilk.json),
+    # ayrica her rozetin (P/G/E) ilk ciktigi an. Veri tarihi bugun degilse yeni kayit yazilmaz.
     F = D + "ilk.json"
     try:
         st = json.load(open(F)) if os.path.exists(F) else {}
     except Exception:
         st = {}
     if st.get("d") != d:
-        st = {"d": d, "h": {}}
+        st = {"d": d, "h": {}, "f": {}}
+    st.setdefault("f", {})
     if d != simdi.strftime("%Y-%m-%d"):
-        return st["h"]
+        return st["h"], st["f"]
     saat = simdi.strftime("%H:%M")
     for r in rows:
         if r[0] not in st["h"]:
             st["h"][r[0]] = {"p": r[2], "s": saat, "c": r[3]}
+        for k in bayrak(r, xc):
+            gk = st["f"].setdefault(k, {})
+            if r[0] not in gk:
+                gk[r[0]] = {"p": r[2], "s": saat, "c": r[3], "x": xc, "sc": r[1]}
     json.dump(st, open(F, "w"), separators=(",", ":"))
-    return st["h"]
+    return st["h"], st["f"]
 
 
 def telegram(rows, d, gt):
@@ -196,6 +262,7 @@ button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{o
 <div class="top" id="top"></div>
 <details class="b" id="fark"></details>
 <details class="b" id="sonuc"></details>
+<details class="b" id="perf"></details>
 <input id="q" type="search" placeholder="Hisse ara (örn. ETILR)" autocomplete="off" aria-label="Hisse ara">
 <div class="chips" id="chips"></div>
 <div class="list"><div class="row head" id="head"></div><div id="rows"></div></div>
@@ -246,6 +313,27 @@ function sonuc(){
   }
   return h+"<p>Getiriler, hissenin o gün listede ilk göründüğü fiyata göre (eski kayıtlarda günün kapanışına göre). Bugünkü sinyallerin sonucu sonraki günlerde dolar. Örnek sayısı azken yanıltıcı olabilir.</p>";
 }
+function perf(){
+  var h="<summary>Sinyal grupları performansı</summary>";
+  var P=V.perf||[];
+  h+="<table class=st><tr><th>Grup</th><th>Adet</th><th>1 gün</th><th>3 gün</th><th>En iyi</th><th>BIST farkı</th></tr>";
+  P.forEach(function(g){
+    h+="<tr><td>"+g[0]+"</td><td>"+g[1]+(g[2]?" <small style='color:var(--mute)'>(+"+g[2]+")</small>":"")+"</td><td>"+rt(g[3])+"</td><td>"+rt(g[4])+"</td><td>"+rt(g[5])+"</td><td>"+rt(g[6])+"<br>"+rt(g[7])+"</td></tr>";
+  });
+  h+="</table>";
+  var E=V.esig||[];
+  h+="<p><b>🌱 Erken aday sinyalleri (son "+E.length+")</b></p>";
+  if(!E.length){
+    h+="<p>Henüz kayıt yok. Erken aday rozeti çıktıkça burada birikir.</p>";
+  }else{
+    h+="<table class=st><tr><th>Hisse</th><th>İlk fiyat</th><th>1 gün</th><th>3 gün</th><th>En iyi</th></tr>";
+    E.forEach(function(x){
+      h+="<tr><td>"+x[0]+"<br><small style='color:var(--mute)'>"+x[1]+" "+x[2]+" · "+x[6]+" puan</small></td><td>"+fmt(x[3])+"</td><td>"+rt(x[4])+"</td><td>"+rt(x[5])+"</td><td>"+rt(x[7])+"</td></tr>";
+    });
+    h+="</table>";
+  }
+  return h+"<p>Her sinyal, rozetin o gün ilk çıktığı andaki fiyata göre ölçülür. Adet yanındaki (+n) sonucu henüz belli olmayanlardır. En iyi: sonraki 3 işgünündeki en yüksek fiyatın ilk fiyata göre artışı. BIST farkı: hissenin getirisi eksi BIST 100 getirisi (üstte 1 gün, altta 3 gün). 💰 grubu ★ ve 🌱 sinyallerini de kapsar; bir hisse gün içinde birden fazla gruba girebilir. Kayıtlar bu özelliğin açıldığı günden itibaren birikir. Örnek sayısı azken yanıltıcı olabilir.</p>";
+}
 function draw(){
   document.getElementById("meta").textContent="Veri tarihi "+V.vt+" · Güncelleme "+V.gt+" · Veri gecikmelidir (Yahoo Finance)";
   document.getElementById("top").innerHTML=
@@ -284,7 +372,8 @@ document.addEventListener("click",function(e){
 });
 document.getElementById("q").addEventListener("input",function(e){S.q=e.target.value.trim().toUpperCase();draw()});
 document.getElementById("fark").innerHTML=fark();
-document.getElementById("sonuc").innerHTML=sonuc(); 
+document.getElementById("sonuc").innerHTML=sonuc();
+document.getElementById("perf").innerHTML=perf();
 var XU=null;
 function guclu(r){return r[1]>=70&&r[4]>=3&&r[3]>=3&&r[3]<=8&&(r[6]+"").indexOf("Para")>=0&&(XU==null||r[3]>XU)}
 var draw0=draw;
@@ -311,10 +400,12 @@ def main():
     vt, gt, rows = s
     d = "-".join(reversed(vt.split(".")))
     simdi = datetime.datetime.utcnow() + datetime.timedelta(hours=3)
+    bugun_str = simdi.strftime("%Y-%m-%d")
     kapanis = simdi.hour * 60 + simdi.minute >= 18 * 60 + 15
-    kes = simdi.strftime("%Y-%m-%d") if kapanis else (simdi - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    kes = bugun_str if kapanis else (simdi - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
-    ilk = ilk_gor(rows, d, simdi)
+    xc = xu_c()
+    ilk, fl = ilk_gor(rows, d, simdi, xc)
 
     G = D + "gecmis.json"
     hist = json.load(open(G)) if os.path.exists(G) else []
@@ -335,8 +426,28 @@ def main():
         hist = [x for x in hist if x["d"] != d] + kayit
     sinir = (simdi - datetime.timedelta(days=120)).strftime("%Y-%m-%d")
     hist = [x for x in hist if x["d"] >= sinir]
-    sonuclari_bul(hist, kes)
+
+    # Rozet sinyalleri (P = para girisi, G = GUCLU, E = ERKEN): docs/sinyal.json
+    SG = D + "sinyal.json"
+    try:
+        sig = json.load(open(SG)) if os.path.exists(SG) else []
+    except Exception:
+        sig = []
+    if d == bugun_str:
+        eski = {(x["t"], x["k"]): x for x in sig if x["d"] == d}
+        sig = [x for x in sig if x["d"] != d]
+        for kod, dk in fl.items():
+            for t, v in dk.items():
+                e = eski.get((t, kod))
+                sig.append(e if e else {
+                    "d": d, "t": t, "k": kod, "px": v["p"], "ps": v["s"], "sc": v["sc"],
+                    "c0": v["c"], "xc": v.get("x"),
+                    "r1": None, "r3": None, "mx": None, "xr1": None, "xr3": None})
+    sig = [x for x in sig if x["d"] >= sinir]
+
+    sonuclari_bul(hist + sig, kes)
     json.dump(hist, open(G, "w"), separators=(",", ":"))
+    json.dump(sig, open(SG, "w"), separators=(",", ":"))
 
     for r in rows:
         r.append(None if not onc else ("y" if r[0] not in onc else r[1] - onc[r[0]]))
@@ -354,6 +465,12 @@ def main():
                                   key=lambda x: (x["d"], x["sc"]), reverse=True)]
     son = (bugun_son + gecmis_son)[:20]
 
+    # Erken aday listesi: tarih, saat, ilk fiyat, 1 gun, 3 gun, puan, en iyi
+    esig = [[x["t"], gm(x["d"]), x.get("ps"), x["px"], x["r1"], x["r3"], x["sc"], x.get("mx")]
+            for x in sorted((x for x in sig if x["k"] == "E"),
+                            key=lambda x: (x["d"], x.get("ps") or ""), reverse=True)][:20]
+    perf = [sgrup(sig, "E", "🌱 Erken aday"), sgrup(sig, "G", "★ GÜÇLÜ"), sgrup(sig, "P", "💰 Para girişi")]
+
     veri = {
         "vt": vt, "gt": gt, "rows": rows,
         "onceki": ".".join(reversed(onc_gun.split("-"))) if onc_gun else None,
@@ -362,6 +479,8 @@ def main():
         "sic": [[r[0], onc[r[0]], r[1]] for r in rows if r[0] in onc and r[1] - onc[r[0]] >= 15],
         "stats": [bant(hist, "70+", 70, 101), bant(hist, "50-69", 50, 70), bant(hist, "0-49", 0, 50)],
         "son": son,
+        "perf": perf,
+        "esig": esig,
     }
     telegram(rows, d, gt)
     uygulama_dosyalari()
