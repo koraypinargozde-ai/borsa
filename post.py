@@ -274,7 +274,7 @@ var D=V.rows;
 var F=[["all","Hepsi"],["near","Tavana yakın"],["vol","Hacim 2x+"],["hi","Puan 50+"]];
 var COLS=[["sym","Hisse"],["score","Puan"],["chg","Değ.%"],["vol","Hacim"]];
 var IX={sym:0,score:1,chg:3,vol:4};
-var S={sort:"score",dir:-1,f:"all",q:"",open:null};
+var S={sort:"score",dir:-1,f:"all",q:"",open:null,pt:"E"};
 function fmt(n){return n.toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function f1(n){return n.toLocaleString("tr-TR",{minimumFractionDigits:1,maximumFractionDigits:1})}
 function sg(n){return (n>0?"+":"")+f1(n)}
@@ -321,10 +321,14 @@ function perf(){
     h+="<tr><td>"+g[0]+"</td><td>"+g[1]+(g[2]?" <small style='color:var(--mute)'>(+"+g[2]+")</small>":"")+"</td><td>"+rt(g[3])+"</td><td>"+rt(g[4])+"</td><td>"+rt(g[5])+"</td><td>"+rt(g[6])+"<br>"+rt(g[7])+"</td></tr>";
   });
   h+="</table>";
-  var E=V.esig||[];
-  h+="<p><b>🌱 Erken aday sinyalleri (son "+E.length+")</b></p>";
+  var T=[["E","🌱 Erken aday"],["G","★ GÜÇLÜ"],["P","💰 Para girişi"]];
+  var ad="";
+  T.forEach(function(t){if(t[0]===S.pt)ad=t[1]});
+  var E=(V.sl||{})[S.pt]||[];
+  h+="<div class=chips style='margin-top:12px'>"+T.map(function(t){return '<button data-pt="'+t[0]+'" aria-pressed="'+(S.pt===t[0])+'">'+t[1]+'</button>'}).join("")+"</div>";
+  h+="<p><b>"+ad+" sinyalleri (son "+E.length+")</b></p>";
   if(!E.length){
-    h+="<p>Henüz kayıt yok. Erken aday rozeti çıktıkça burada birikir.</p>";
+    h+="<p>Henüz kayıt yok. Bu rozet çıktıkça burada birikir.</p>";
   }else{
     h+="<table class=st><tr><th>Hisse</th><th>İlk fiyat</th><th>1 gün</th><th>3 gün</th><th>En iyi</th></tr>";
     E.forEach(function(x){
@@ -364,6 +368,7 @@ function draw(){
 }
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
+  if(b.dataset.pt){S.pt=b.dataset.pt;var pe=document.getElementById("perf");var was=pe.open;pe.innerHTML=perf();pe.open=was;return}
   if(b.dataset.f){S.f=b.dataset.f}
   else if(b.dataset.s){if(S.sort===b.dataset.s)S.dir*=-1;else{S.sort=b.dataset.s;S.dir=b.dataset.s==="sym"?1:-1}}
   else if(b.dataset.o){S.open=S.open===b.dataset.o?null:b.dataset.o}
@@ -465,10 +470,12 @@ def main():
                                   key=lambda x: (x["d"], x["sc"]), reverse=True)]
     son = (bugun_son + gecmis_son)[:20]
 
-    # Erken aday listesi: tarih, saat, ilk fiyat, 1 gun, 3 gun, puan, en iyi
-    esig = [[x["t"], gm(x["d"]), x.get("ps"), x["px"], x["r1"], x["r3"], x["sc"], x.get("mx")]
-            for x in sorted((x for x in sig if x["k"] == "E"),
-                            key=lambda x: (x["d"], x.get("ps") or ""), reverse=True)][:20]
+    # Rozet listeleri (E, G, P): hisse, tarih, saat, ilk fiyat, 1 gun, 3 gun, puan, en iyi
+    sl = {}
+    for kod in ("E", "G", "P"):
+        sl[kod] = [[x["t"], gm(x["d"]), x.get("ps"), x["px"], x["r1"], x["r3"], x["sc"], x.get("mx")]
+                   for x in sorted((x for x in sig if x["k"] == kod),
+                                   key=lambda x: (x["d"], x.get("ps") or ""), reverse=True)][:20]
     perf = [sgrup(sig, "E", "🌱 Erken aday"), sgrup(sig, "G", "★ GÜÇLÜ"), sgrup(sig, "P", "💰 Para girişi")]
 
     veri = {
@@ -480,7 +487,7 @@ def main():
         "stats": [bant(hist, "70+", 70, 101), bant(hist, "50-69", 50, 70), bant(hist, "0-49", 0, 50)],
         "son": son,
         "perf": perf,
-        "esig": esig,
+        "sl": sl,
     }
     telegram(rows, d, gt)
     uygulama_dosyalari()
