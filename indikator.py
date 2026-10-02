@@ -201,7 +201,7 @@ y = A.y.values
 r1 = A.r1.values
 r3 = A.r3.values
 dates = np.sort(A.index.unique())
-cut = dates[int(len(dates) * 0.6)]
+cut = pd.Timestamp(dates[int(len(dates) * 0.6)])
 trm = np.asarray(A.index < cut)
 
 
