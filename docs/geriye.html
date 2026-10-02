@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Geriye test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST TAVAN ÖNCESİ GERİYE TEST
+Dönem: 31.10.2025 - 01.10.2026 · hisse: 510 · gün-hisse örneği: 112366 · ertesi gün tavan: 2085 (taban oran %1.86)
+Sadece o gün %7&#x27;den az yükselmiş (primlenmemiş) hisseler sayıldı.
+tavan = ertesi gün tavan olma oranı · kat = taban orana göre kaç kat
+g1 = ertesi gün kapanış getirisi (ort.) · z1 = ertesi gün en yüksek · z3 = 3 günde en yüksek
+
+=== TEK KOŞULLAR ===
+koşul                         n   tavan    kat     g1     z1     z3
+değ ≤0                    64957    1.8%   1.0x   -0.3   +2.1   +4.1
+değ 0-3                   36955    1.7%   0.9x   +0.0   +2.2   +4.1
+değ 3-7                   10454    3.0%   1.6x   -0.0   +2.9   +5.1
+değ &lt;3                   101912    1.7%   0.9x   -0.2   +2.2   +4.1
+hacim &lt;1x                 73846    1.6%   0.8x   -0.1   +2.1   +4.0
+hacim 1-2x                30644    2.0%   1.1x   -0.1   +2.4   +4.4
+hacim 2-4x                 6357    3.3%   1.8x   -0.5   +2.8   +5.0
+hacim 4x+                  1519    6.5%   3.5x   -0.9   +3.5   +5.8
+kapanış ≥70               22219    1.9%   1.0x   +0.0   +2.3   +4.3
+kırılım 20g                4291    2.7%   1.4x   +0.1   +2.7   +5.0
+zirveye ≤%3               10679    1.6%   0.9x   +0.1   +2.3   +4.4
+sıkışma &lt;0.8              25681    1.6%   0.8x   -0.1   +2.0   +3.9
+5g getiri &lt;5              94024    1.6%   0.9x   -0.2   +2.1   +4.0
+20g getiri &lt;10            91472    1.6%   0.9x   -0.2   +2.1   +4.0
+💰 para girişi              1624    3.2%   1.7x   +0.2   +2.9   +5.5
+CMF&gt;0.15                  11812    2.7%   1.4x   -0.1   +2.3   +4.7
+endeksten güçlü           26787    2.4%   1.3x   -0.1   +2.6   +4.6
+son 10g tavan var         15783    4.3%   2.3x   -0.4   +3.0   +5.5
+önceki 2g hacim≥1.2x      27328    2.5%   1.4x   -0.2   +2.5   +4.6
+
+=== EN İYİ KOMBİNASYONLAR (eğitim: 31.10.2025-24.06.2026, test: sonrası) ===
+Test sütunu kuralın görmediği dönemdeki sonucu. İkisi de yüksekse güvenilir.
+1) hacim 4x+ + kırılım 20g + son 10g tavan var
+   eğitim: n=142 tavan %8.5 (12 olay) · test: n=27 tavan %14.8 (4 olay)
+   ertesi gün kapanış -0.4% · ertesi gün en yüksek +4.5% · 3 günde en yüksek +7.6%
+2) hacim 4x+ + CMF&gt;0.15
+   eğitim: n=158 tavan %8.2 (13 olay) · test: n=51 tavan %7.8 (4 olay)
+   ertesi gün kapanış -0.7% · ertesi gün en yüksek +3.7% · 3 günde en yüksek +6.4%
+3) değ 0-3 + hacim 4x+ + önceki 2g hacim≥1.2x
+   eğitim: n=174 tavan %8.0 (14 olay) · test: n=43 tavan %9.3 (4 olay)
+   ertesi gün kapanış -0.1% · ertesi gün en yüksek +3.9% · 3 günde en yüksek +6.5%
+4) hacim 4x+ + endeksten güçlü + son 10g tavan var
+   eğitim: n=166 tavan %7.8 (13 olay) · test: n=41 tavan %12.2 (5 olay)
+   ertesi gün kapanış -0.9% · ertesi gün en yüksek +4.3% · 3 günde en yüksek +7.3%
+5) hacim 4x+ + CMF&gt;0.15 + önceki 2g hacim≥1.2x
+   eğitim: n=129 tavan %7.8 (10 olay) · test: n=36 tavan %8.3 (3 olay)
+   ertesi gün kapanış -0.4% · ertesi gün en yüksek +4.0% · 3 günde en yüksek +7.0%
+6) hacim 4x+ + kırılım 20g + önceki 2g hacim≥1.2x
+   eğitim: n=220 tavan %7.3 (16 olay) · test: n=46 tavan %10.9 (5 olay)
+   ertesi gün kapanış -0.2% · ertesi gün en yüksek +4.3% · 3 günde en yüksek +7.2%
+7) değ 3-7 + hacim 4x+ + 20g getiri &lt;10
+   eğitim: n=194 tavan %7.2 (14 olay) · test: n=97 tavan %4.1 (4 olay)
+   ertesi gün kapanış -0.6% · ertesi gün en yüksek +3.6% · 3 günde en yüksek +5.8%
+8) hacim 4x+ + 20g getiri &lt;10 + endeksten güçlü
+   eğitim: n=281 tavan %7.1 (20 olay) · test: n=142 tavan %3.5 (5 olay)
+   ertesi gün kapanış -0.5% · ertesi gün en yüksek +3.5% · 3 günde en yüksek +5.8%
+9) değ ≤0 + hacim 2-4x + son 10g tavan var
+   eğitim: n=684 tavan %7.0 (48 olay) · test: n=247 tavan %4.9 (12 olay)
+   ertesi gün kapanış -0.9% · ertesi gün en yüksek +3.6% · 3 günde en yüksek +6.2%
+10) hacim 4x+ + son 10g tavan var
+   eğitim: n=487 tavan %7.0 (34 olay) · test: n=159 tavan %10.7 (17 olay)
+   ertesi gün kapanış -1.2% · ertesi gün en yüksek +4.0% · 3 günde en yüksek +6.5%
+11) değ 3-7 + hacim 4x+ + endeksten güçlü
+   eğitim: n=347 tavan %6.9 (24 olay) · test: n=128 tavan %4.7 (6 olay)
+   ertesi gün kapanış -0.4% · ertesi gün en yüksek +4.0% · 3 günde en yüksek +6.5%
+12) değ 0-3 + hacim 4x+ + 20g getiri &lt;10
+   eğitim: n=147 tavan %6.8 (10 olay) · test: n=58 tavan %5.2 (3 olay)
+   ertesi gün kapanış -0.1% · ertesi gün en yüksek +3.4% · 3 günde en yüksek +6.0%
+
+=== INFO: TAVANDAN BİR GÜN ÖNCEKİ HALİ ===
+14.10.2025: değ -0.8% · hacim nanx · kapanış 28 · 20g zirveye +nan% · sıkışma nan · 5g +4.5% · 20g +nan% · 💰 hayır · endeksten fark +1.5
+17.10.2025: değ -2.1% · hacim nanx · kapanış 41 · 20g zirveye +nan% · sıkışma nan · 5g -6.3% · 20g +nan% · 💰 hayır · endeksten fark -0.6
+20.10.2025: değ +10.0% · hacim nanx · kapanış 100 · 20g zirveye +nan% · sıkışma nan · 5g +9.4% · 20g +nan% · 💰 hayır · endeksten fark +7.3
+28.10.2025: değ +4.6% · hacim nanx · kapanış 76 · 20g zirveye +nan% · sıkışma nan · 5g +2.7% · 20g +nan% · 💰 hayır · endeksten fark +4.4
+21.11.2025: değ -1.3% · hacim 0.4x · kapanış 33 · 20g zirveye -33.2% · sıkışma 0.70 · 5g -1.3% · 20g -12.0% · 💰 hayır · endeksten fark -0.8
+08.05.2026: değ +2.5% · hacim 1.4x · kapanış 76 · 20g zirveye -1.6% · sıkışma 1.48 · 5g +7.9% · 20g +7.6% · 💰 hayır · endeksten fark +2.3
+10.06.2026: değ -2.4% · hacim 0.8x · kapanış 18 · 20g zirveye -13.9% · sıkışma 1.19 · 5g -5.3% · 20g -5.8% · 💰 hayır · endeksten fark -2.5
+16.06.2026: değ +1.5% · hacim 1.1x · kapanış 50 · 20g zirveye -2.9% · sıkışma 1.28 · 5g +9.5% · 20g +5.5% · 💰 hayır · endeksten fark +1.2
+17.06.2026: değ +9.9% · hacim 3.2x · kapanış 100 · 20g zirveye +6.7% · sıkışma 1.39 · 5g +23.3% · 20g +19.4% · 💰 hayır · endeksten fark +10.4
+19.06.2026: değ +3.3% · hacim 6.4x · kapanış 22 · 20g zirveye +3.3% · sıkışma 1.47 · 5g +25.7% · 20g +39.6% · 💰 hayır · endeksten fark +3.9
+22.06.2026: değ +9.9% · hacim 1.6x · kapanış 100 · 20g zirveye +3.4% · sıkışma 1.62 · 5g +39.2% · 20g +52.2% · 💰 hayır · endeksten fark +10.0
+23.06.2026: değ +9.9% · hacim 4.1x · kapanış 100 · 20g zirveye +9.9% · sıkışma 1.72 · 5g +50.7% · 20g +68.2% · 💰 evet · endeksten fark +11.2
+24.06.2026: değ +9.9% · hacim 0.2x · kapanış 50 · 20g zirveye +9.9% · sıkışma 1.40 · 5g +50.7% · 20g +84.8% · 💰 evet · endeksten fark +11.3
+06.07.2026: değ +5.4% · hacim 0.5x · kapanış 66 · 20g zirveye -14.3% · sıkışma 1.31 · 5g +2.5% · 20g +101.6% · 💰 hayır · endeksten fark +5.4
+04.08.2026: değ +6.8% · hacim 3.5x · kapanış 80 · 20g zirveye -29.7% · sıkışma 1.14 · 5g +3.6% · 20g -22.7% · 💰 hayır · endeksten fark +4.7
+14.09.2026: değ -9.8% · hacim 0.7x · kapanış 0 · 20g zirveye -39.1% · sıkışma 0.97 · 5g -4.8% · 20g -36.3% · 💰 hayır · endeksten fark -8.2
+30.09.2026: değ -9.1% · hacim 0.0x · kapanış 50 · 20g zirveye -73.5% · sıkışma 0.00 · 5g -38.9% · 20g -71.9% · 💰 hayır · endeksten fark -6.3</pre></body></html>
