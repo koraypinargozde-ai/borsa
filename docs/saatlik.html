@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Saatlik test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{white-space:pre-wrap}</style></head><body><pre>BIST GÜN İÇİ GİRİŞ TESTİ (saatlik mum)
+Dönem: 31.10.2025 - 01.10.2026
+Sinyal: ilk 1 ya da 2 saatlik mum bitince.
+Giriş: bir sonraki mumun AÇILIŞ fiyatı.
+hacim 3x = o ana kadarki hacim, son 20 günün
+aynı saatine göre 3 kat.
+Çıkış: gün sonu kapanış / hedef-stop /
+ertesi gün kapanış. Hedef ve stop aynı mumda
+gelirse STOP sayıldı.
+Zaten tavana yakın (%9+) olanlar hariç.
+Komisyon+kayma %0.3 düşüldü. ort = net getiri %
+eğit/test = ilk %70 / son %30 dönem ortalaması
+
+=== TÜMÜ (rastgele alış) · ilk 1 saatlik mum ===
+n 47351 · gün sonu tavan %1.8 (taban %1.8)
+strateji     isab    ort   eğit   test
+kapanış       34%  -0.53  -0.53  -0.55
++3/-2         34%  -0.47  -0.45  -0.52
++5/-3         34%  -0.49  -0.48  -0.53
+ertesi gün    38%  -0.72  -0.59  -1.02
+
+=== TÜMÜ (rastgele alış) · ilk 2 saatlik mum ===
+n 109092 · gün sonu tavan %1.4 (taban %1.4)
+strateji     isab    ort   eğit   test
+kapanış       35%  -0.39  -0.36  -0.45
++3/-2         34%  -0.40  -0.36  -0.48
++5/-3         34%  -0.39  -0.36  -0.46
+ertesi gün    40%  -0.51  -0.32  -0.97
+
+=== hacim 3x+ &amp; +1..+6% · ilk 1 saatlik mum ===
+n 763 · gün sonu tavan %6.0 (taban %1.8)
+strateji     isab    ort   eğit   test
+kapanış       37%  -0.72  -0.67  -1.16
++3/-2         36%  -0.38  -0.39  -0.36
++5/-3         34%  -0.57  -0.55  -0.71
+ertesi gün    36%  -1.01  -0.89  -2.02
+
+=== hacim 3x+ &amp; +1..+6% · ilk 2 saatlik mum ===
+n 2580 · gün sonu tavan %6.4 (taban %1.4)
+strateji     isab    ort   eğit   test
+kapanış       34%  -0.88  -0.85  -0.98
++3/-2         35%  -0.49  -0.48  -0.51
++5/-3         33%  -0.66  -0.67  -0.64
+ertesi gün    36%  -1.03  -0.78  -1.81
+
+=== hacim 5x+ &amp; +1..+6% · ilk 1 saatlik mum ===
+n 604 · gün sonu tavan %6.6 (taban %1.8)
+strateji     isab    ort   eğit   test
+kapanış       37%  -0.82  -0.76  -1.22
++3/-2         35%  -0.44  -0.45  -0.40
++5/-3         34%  -0.64  -0.62  -0.77
+ertesi gün    35%  -1.09  -0.93  -2.09
+
+=== hacim 5x+ &amp; +1..+6% · ilk 2 saatlik mum ===
+n 939 · gün sonu tavan %8.3 (taban %1.4)
+strateji     isab    ort   eğit   test
+kapanış       33%  -1.30  -1.32  -1.24
++3/-2         34%  -0.57  -0.56  -0.59
++5/-3         31%  -0.85  -0.86  -0.81
+ertesi gün    32%  -1.66  -1.41  -2.34
+
+=== hacim 3x+ &amp; +1..+6% &amp; zirvede · ilk 1 saatlik mum ===
+n 254 · gün sonu tavan %3.1 (taban %1.8)
+strateji     isab    ort   eğit   test
+kapanış       41%  -0.19  -0.17  -0.66
++3/-2         43%  -0.06  -0.06  +0.01
++5/-3         40%  -0.21  -0.20  -0.35
+ertesi gün    40%  -0.29  -0.26  -1.05
+
+=== hacim 3x+ &amp; +1..+6% &amp; zirvede · ilk 2 saatlik mum ===
+n 395 · gün sonu tavan %4.6 (taban %1.4)
+strateji     isab    ort   eğit   test
+kapanış       37%  -0.54  -0.62  -0.21
++3/-2         38%  -0.31  -0.35  -0.18
++5/-3         36%  -0.47  -0.53  -0.23
+ertesi gün    42%  -0.48  -0.28  -1.26
+
+=== hacim 3x+ &amp; 0..+3% (erken) · ilk 1 saatlik mum ===
+n 822 · gün sonu tavan %2.1 (taban %1.8)
+strateji     isab    ort   eğit   test
+kapanış       41%  -0.20  -0.16  -0.96
++3/-2         40%  -0.15  -0.14  -0.40
++5/-3         40%  -0.16  -0.13  -0.78
+ertesi gün    45%  -0.13  -0.06  -1.54
+
+=== hacim 3x+ &amp; 0..+3% (erken) · ilk 2 saatlik mum ===
+n 1564 · gün sonu tavan %2.5 (taban %1.4)
+strateji     isab    ort   eğit   test
+kapanış       35%  -0.58  -0.54  -0.68
++3/-2         37%  -0.36  -0.34  -0.41
++5/-3         35%  -0.39  -0.36  -0.50
+ertesi gün    40%  -0.68  -0.42  -1.43</pre></body></html>
