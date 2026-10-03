@@ -17,6 +17,9 @@ MIN_SCORE = 72
 PERIOD = os.environ.get("OBV_PERIOD", "5d")
 COST = 0.3
 
+AYAR = {"hacim": REL_VOL, "aralik": NARROW, "obv": OBV_LB, "rsi": RSI_LEN,
+        "vol": VOL_MULT, "akis": FLOW_LB, "puan": MIN_SCORE}
+
 src = open("scan.py", encoding="utf-8").read()
 T = re.search(r'T = """(.*?)"""', src, re.S).group(1).split()
 tick = [t + ".IS" for t in dict.fromkeys(T)]
@@ -24,6 +27,12 @@ tick = [t + ".IS" for t in dict.fromkeys(T)]
 
 def rma(s, n):
     return s.ewm(alpha=1 / n, adjust=False).mean()
+
+
+def yv(z, d=2):
+    if z is None or pd.isna(z):
+        return None
+    return round(float(z), d)
 
 
 def tara(x, ad):
@@ -60,9 +69,11 @@ def tara(x, ad):
     cmf_ok = (cmf > 0) & (cmf > cmf.shift(1))
     nmf = mfv.rolling(FLOW_LB).sum()
     nf_ok = (nmf > 0) & (nmf > nmf.shift(FLOW_LB))
+    nmfp = nmf / v.rolling(FLOW_LB).sum() * 100
     pcl = c.shift(1)
     tr = pd.concat([hl, (h - pcl).abs(), (l - pcl).abs()], axis=1).max(axis=1)
     atr = rma(tr, 14)
+    vm = atr / atr.rolling(20).mean()
     vol_ok = atr > atr.rolling(20).mean() * VOL_MULT
     rv_ok = (avg > 0) & (relv >= REL_VOL)
 
@@ -89,11 +100,13 @@ def tara(x, ad):
         r1 = (k / g - 1) * 100 if (g is not None and k is not None) else None
         rd = (cv[e] / g - 1) * 100 if g is not None else None
         rh = (hv[i + 1:e + 1].max() / g - 1) * 100 if g is not None else None
-        rd2 = lambda z: None if z is None else round(float(z), 2)
         out.append({
             "t": ad, "z": x.index[i].strftime("%Y-%m-%d %H:%M"),
-            "p": rd2(cv[i]), "g": rd2(g), "r1": rd2(r1), "rd": rd2(rd),
-            "rh": rd2(rh), "rv": rd2(relv.iloc[i]), "son": rd2(cv[-1]),
+            "p": yv(cv[i]), "g": yv(g), "r1": yv(r1), "rd": yv(rd),
+            "rh": yv(rh), "rv": yv(relv.iloc[i]), "son": yv(cv[-1]),
+            "vm": yv(vm.iloc[i]), "rsi": yv(rsi.iloc[i]),
+            "cmf": yv(cmf.iloc[i], 3), "sc": yv(score.iloc[i], 0),
+            "rg": yv(rng.iloc[i]), "nm": yv(nmfp.iloc[i]),
         })
     return out
 
@@ -129,15 +142,67 @@ if os.path.exists("docs/obv.json"):
         eski = []
 sozluk = {(s["t"], s["z"]): s for s in eski}
 for s in yeni:
-    sozluk[(s["t"], s["z"])] = s
+    k = (s["t"], s["z"])
+    ek = sozluk.get(k)
+    if ek and ek.get("r5") is not None:
+        s["r5"] = ek["r5"]
+    sozluk[k] = s
 S = sorted(sozluk.values(), key=lambda s: s["z"], reverse=True)[:500]
+
+
+def bes_gun(S):
+    su = datetime.now(ZoneInfo("Europe/Istanbul"))
+    bt = pd.Timestamp(su.date())
+    kapandi = (su.hour, su.minute) >= (18, 15)
+    bek = [s for s in S if s.get("r5") is None and s.get("g")]
+    tl = sorted({s["t"] for s in bek})
+    seri = {}
+    for i in range(0, len(tl), 30):
+        grup = [t + ".IS" for t in tl[i:i + 30]]
+        try:
+            d = yf.download(grup, period="3mo", interval="1d", group_by="ticker",
+                            progress=False, threads=True, auto_adjust=False)
+        except Exception as e:
+            print("günlük hata", e)
+            continue
+        for t in grup:
+            try:
+                x = d[t] if isinstance(d.columns, pd.MultiIndex) else d
+                cs = x["Close"].dropna()
+                cs.index = pd.to_datetime(cs.index).tz_localize(None).normalize()
+                cs = cs[~cs.index.duplicated()]
+                seri[t[:-3]] = cs
+            except Exception:
+                continue
+    for s in bek:
+        cs = seri.get(s["t"])
+        if cs is None or len(cs) == 0:
+            continue
+        dz = pd.Timestamp(s["z"][:10])
+        k = cs.index.searchsorted(dz)
+        if k >= len(cs) or cs.index[k] != dz:
+            continue
+        j = k + 5
+        if j >= len(cs):
+            continue
+        dj = cs.index[j]
+        if dj > bt or (dj == bt and not kapandi):
+            continue
+        s["r5"] = yv((float(cs.iloc[j]) / s["g"] - 1) * 100)
+
+
+try:
+    bes_gun(S)
+except Exception as e:
+    print("5. gün hesabı hata", e)
+
 simdi = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%d.%m.%Y %H:%M")
-json.dump({"g": simdi, "s": S}, open("docs/obv.json", "w", encoding="utf-8"),
+json.dump({"g": simdi, "s": S, "a": AYAR}, open("docs/obv.json", "w", encoding="utf-8"),
           ensure_ascii=False)
 
 
 def ozet(key):
-    a = [s[key] - COST for s in S if s[key] is not None]
+    a = [s[key] - COST for s in S if s.get(key) is not None]
     if not a:
         return "—"
     return f"n {len(a)} · ort {np.mean(a):+.2f}% · isabet %{np.mean([x > 0 for x in a]) * 100:.0f}"
@@ -154,7 +219,7 @@ for s in S[:150]:
     z = datetime.strptime(s["z"], "%Y-%m-%d %H:%M").strftime("%d.%m %H:%M")
     satir += (f"<tr><td><b>{HT.escape(s['t'])}</b></td><td>{z}</td><td>{s['p']}</td>"
               f"<td>{'—' if s['g'] is None else s['g']}</td>"
-              f"{td(s['r1'])}{td(s['rd'])}{td(s['rh'])}<td>{s['rv']}x</td></tr>")
+              f"{td(s['r1'])}{td(s['rd'])}{td(s.get('r5'))}<td>{s['rv']}x</td></tr>")
 if not satir:
     satir = "<tr><td colspan=8>Henüz sinyal yok</td></tr>"
 
@@ -173,10 +238,11 @@ page = ("<!DOCTYPE html><html lang=tr><head><meta charset=utf-8>"
         f"volatilite {VOL_MULT} · net akış {FLOW_LB}<br><br>"
         f"Toplam sinyal: {len(S)}<br>"
         f"1 saat sonra (net %{COST} düşüldü): {ozet('r1')}<br>"
-        f"Gün sonu/şu an (net): {ozet('rd')}</div>"
+        f"Gün sonu/şu an (net): {ozet('rd')}<br>"
+        f"5. gün kapanış (net): {ozet('r5')}</div>"
         "<div class=w><table><tr><th>Hisse</th><th>Zaman</th><th>Sinyal</th><th>Giriş</th>"
-        "<th>1sa %</th><th>Gün sonu %</th><th>Zirve %</th><th>Hacim</th></tr>"
+        "<th>1sa %</th><th>Gün sonu %</th><th>5. gün %</th><th>Hacim</th></tr>"
         + satir + "</table></div>"
         "<p style='color:#9aa0a6'>Giriş = sinyalden sonraki mumun açılışı. Getiriler girişe göre, "
-        "komisyonsuz.</p></body></html>")
+        "komisyonsuz. 5. gün = sinyalden sonraki 5. işlem gününün kapanışı.</p></body></html>")
 open("docs/obv.html", "w", encoding="utf-8").write(page)
