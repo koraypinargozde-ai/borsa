@@ -11,7 +11,7 @@ REL_VOL = 8.9
 NARROW = 2.2
 OBV_LB = 98
 RSI_LEN = 3
-VOL_MULT = 1.0
+VOL_MULT = 1.1
 FLOW_LB = 41
 MIN_SCORE = 72
 PERIOD = os.environ.get("OBV_PERIOD", "5d")
@@ -56,6 +56,7 @@ def tara(x, ad):
     narrow = rng < NARROW
     obv = (np.sign(c.diff()) * v).fillna(0).cumsum()
     obv_up = obv > obv.shift(OBV_LB)
+    obd = (obv - obv.shift(OBV_LB)) / v.rolling(OBV_LB).sum() * 100
     vb = ((v > v.shift(1)).astype(int) + (v.shift(1) > v.shift(2)).astype(int)
           + (v.shift(2) > v.shift(3)).astype(int) + (v.shift(3) > v.shift(4)).astype(int)) >= 2
     d = c.diff()
@@ -104,9 +105,10 @@ def tara(x, ad):
             "t": ad, "z": x.index[i].strftime("%Y-%m-%d %H:%M"),
             "p": yv(cv[i]), "g": yv(g), "r1": yv(r1), "rd": yv(rd),
             "rh": yv(rh), "rv": yv(relv.iloc[i]), "son": yv(cv[-1]),
-            "vm": yv(vm.iloc[i]), "rsi": yv(rsi.iloc[i]),
+            "vm": yv(vm.iloc[i]), "rsi": yv(rsi.iloc[i], 1),
             "cmf": yv(cmf.iloc[i], 3), "sc": yv(score.iloc[i], 0),
             "rg": yv(rng.iloc[i]), "nm": yv(nmfp.iloc[i]),
+            "nf": yv(nmf.iloc[i], 0), "ob": yv(obd.iloc[i]),
         })
     return out
 
@@ -144,17 +146,22 @@ sozluk = {(s["t"], s["z"]): s for s in eski}
 for s in yeni:
     k = (s["t"], s["z"])
     ek = sozluk.get(k)
-    if ek and ek.get("r5") is not None:
-        s["r5"] = ek["r5"]
+    if ek:
+        for a in ("gk", "ss", "sg"):
+            if a in ek:
+                s[a] = ek[a]
     sozluk[k] = s
 S = sorted(sozluk.values(), key=lambda s: s["z"], reverse=True)[:500]
 
 
-def bes_gun(S):
+def gun_sonuc(S):
+    # gk = sinyalden sonraki 1..5. işlem günü kapanışının girişe göre % değişimi
+    # ss = en son fiyata göre % değişim, sg = sinyalden bu yana geçen işlem günü
     su = datetime.now(ZoneInfo("Europe/Istanbul"))
     bt = pd.Timestamp(su.date())
     kapandi = (su.hour, su.minute) >= (18, 15)
-    bek = [s for s in S if s.get("r5") is None and s.get("g")]
+    sinir = (bt - pd.Timedelta(days=14)).strftime("%Y-%m-%d")
+    bek = [s for s in S if s.get("g") and (s["z"][:10] >= sinir or "gk" not in s)]
     tl = sorted({s["t"] for s in bek})
     seri = {}
     for i in range(0, len(tl), 30):
@@ -177,24 +184,33 @@ def bes_gun(S):
     for s in bek:
         cs = seri.get(s["t"])
         if cs is None or len(cs) == 0:
+            s.setdefault("gk", [])
             continue
         dz = pd.Timestamp(s["z"][:10])
         k = cs.index.searchsorted(dz)
         if k >= len(cs) or cs.index[k] != dz:
+            s.setdefault("gk", [])
             continue
-        j = k + 5
-        if j >= len(cs):
-            continue
-        dj = cs.index[j]
-        if dj > bt or (dj == bt and not kapandi):
-            continue
-        s["r5"] = yv((float(cs.iloc[j]) / s["g"] - 1) * 100)
+        g = s["g"]
+        gk = []
+        for dd in range(1, 6):
+            j = k + dd
+            if j >= len(cs):
+                break
+            dj = cs.index[j]
+            if dj > bt or (dj == bt and not kapandi):
+                break
+            gk.append(yv((float(cs.iloc[j]) / g - 1) * 100))
+        last = len(cs) - 1
+        s["gk"] = gk
+        s["sg"] = last - k
+        s["ss"] = yv((float(cs.iloc[last]) / g - 1) * 100)
 
 
 try:
-    bes_gun(S)
+    gun_sonuc(S)
 except Exception as e:
-    print("5. gün hesabı hata", e)
+    print("günlük sonuç hesabı hata", e)
 
 simdi = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%d.%m.%Y %H:%M")
 json.dump({"g": simdi, "s": S, "a": AYAR}, open("docs/obv.json", "w", encoding="utf-8"),
@@ -203,6 +219,13 @@ json.dump({"g": simdi, "s": S, "a": AYAR}, open("docs/obv.json", "w", encoding="
 
 def ozet(key):
     a = [s[key] - COST for s in S if s.get(key) is not None]
+    if not a:
+        return "—"
+    return f"n {len(a)} · ort {np.mean(a):+.2f}% · isabet %{np.mean([x > 0 for x in a]) * 100:.0f}"
+
+
+def ozet_g(i):
+    a = [s["gk"][i] - COST for s in S if s.get("gk") and len(s["gk"]) > i]
     if not a:
         return "—"
     return f"n {len(a)} · ort {np.mean(a):+.2f}% · isabet %{np.mean([x > 0 for x in a]) * 100:.0f}"
@@ -219,7 +242,7 @@ for s in S[:150]:
     z = datetime.strptime(s["z"], "%Y-%m-%d %H:%M").strftime("%d.%m %H:%M")
     satir += (f"<tr><td><b>{HT.escape(s['t'])}</b></td><td>{z}</td><td>{s['p']}</td>"
               f"<td>{'—' if s['g'] is None else s['g']}</td>"
-              f"{td(s['r1'])}{td(s['rd'])}{td(s.get('r5'))}<td>{s['rv']}x</td></tr>")
+              f"{td(s['r1'])}{td(s['rd'])}{td(s.get('ss'))}<td>{s['rv']}x</td></tr>")
 if not satir:
     satir = "<tr><td colspan=8>Henüz sinyal yok</td></tr>"
 
@@ -238,11 +261,14 @@ page = ("<!DOCTYPE html><html lang=tr><head><meta charset=utf-8>"
         f"volatilite {VOL_MULT} · net akış {FLOW_LB}<br><br>"
         f"Toplam sinyal: {len(S)}<br>"
         f"1 saat sonra (net %{COST} düşüldü): {ozet('r1')}<br>"
-        f"Gün sonu/şu an (net): {ozet('rd')}<br>"
-        f"5. gün kapanış (net): {ozet('r5')}</div>"
+        f"Gün sonu (net): {ozet('rd')}<br>"
+        f"1. gün (net): {ozet_g(0)}<br>"
+        f"2. gün (net): {ozet_g(1)}<br>"
+        f"3. gün (net): {ozet_g(2)}<br>"
+        f"5. gün (net): {ozet_g(4)}</div>"
         "<div class=w><table><tr><th>Hisse</th><th>Zaman</th><th>Sinyal</th><th>Giriş</th>"
-        "<th>1sa %</th><th>Gün sonu %</th><th>5. gün %</th><th>Hacim</th></tr>"
+        "<th>1sa %</th><th>Gün sonu %</th><th>Şimdi %</th><th>Hacim</th></tr>"
         + satir + "</table></div>"
         "<p style='color:#9aa0a6'>Giriş = sinyalden sonraki mumun açılışı. Getiriler girişe göre, "
-        "komisyonsuz. 5. gün = sinyalden sonraki 5. işlem gününün kapanışı.</p></body></html>")
+        "komisyonsuz. Şimdi = girişe göre en son fiyat.</p></body></html>")
 open("docs/obv.html", "w", encoding="utf-8").write(page)
