@@ -1,8 +1,19 @@
 import json, re, html as HT
 
 D = "docs/"
-A, B = "<!--OBV-->", "<!--/OBV-->"
 HEDEF = '<details class="b" id="perf"></details>'
+
+KUTULAR = [
+    {"dosya": "obv.json", "id": "obv", "m": "OBV",
+     "baslik": "İndikatör sinyali (Dip OBV, 5 dk)",
+     "not": "TradingView'deki Dip OBV indikatörünün 5 dakikalık AL sinyali (hacim 8,9x, aralık %2,2, "
+            "OBV 98, RSI 3, volatilite 1, net akış 41)."},
+    {"dosya": "obv2.json", "id": "obv2", "m": "OBV2",
+     "baslik": "İndikatör sinyali 2 (Dip OBV v2.0 Sade, 5 dk)",
+     "not": "Dip OBV v2.0 Sade indikatörünün 5 dakikalık AL sinyali (hacim 12,7x, aralık %1, OBV 111 "
+            "robustluk ±6 / 0,92, RSI 3, dip arama 40 / %6, alt fitil 1, kırılım hacmi 12,7x). "
+            "Şartları çok sıkı olduğu için sinyal çok seyrek çıkar."},
+]
 
 
 def f2(v):
@@ -25,18 +36,12 @@ def ozet(s, k):
     return "n %d · ort %s · isabet %%%d" % (len(a), f2(ort), isabet)
 
 
-def main():
+def kutu(c):
     try:
-        j = json.load(open(D + "obv.json", encoding="utf-8"))
+        j = json.load(open(D + c["dosya"], encoding="utf-8"))
     except Exception:
-        print("obv.json yok")
-        return
+        return ""
     s = j.get("s", [])
-    h = open(D + "index.html", encoding="utf-8").read()
-    h = re.sub(re.escape(A) + ".*?" + re.escape(B), "", h, flags=re.S)
-    if HEDEF not in h:
-        print("hedef yer bulunamadi")
-        return
     satir = ""
     for x in s[:25]:
         z = x["z"]
@@ -48,19 +53,30 @@ def main():
                   + hucre(x.get("r1")) + hucre(x.get("rd")) + hucre(x.get("rh")) + "</tr>")
     if not satir:
         satir = "<tr><td colspan=5>Henüz sinyal yok</td></tr>"
-    kutu = (A + '<details class="b" id="obv"><summary>İndikatör sinyali (Dip OBV, 5 dk)</summary>'
+    a, b = "<!--" + c["m"] + "-->", "<!--/" + c["m"] + "-->"
+    return (a + '<details class="b" id="' + c["id"] + '"><summary>' + c["baslik"] + '</summary>'
             + "<p>Güncelleme: <b>" + str(j.get("g")) + "</b> · toplam sinyal: <b>" + str(len(s)) + "</b></p>"
             + "<p>1 saat sonra (net): " + ozet(s, "r1") + "<br>Gün sonu (net): " + ozet(s, "rd") + "</p>"
             + "<table class=st><tr><th>Hisse</th><th>Giriş</th><th>1 sa</th><th>Gün sonu</th><th>Zirve</th></tr>"
             + satir + "</table>"
-            + "<p>TradingView'deki Dip OBV indikatörünün 5 dakikalık AL sinyali (hacim 8,9x, aralık %2,2, "
-            + "OBV 98, RSI 3, volatilite 1, net akış 41). Giriş: sinyalden sonraki mumun açılışı. "
+            + "<p>" + c["not"] + " Giriş: sinyalden sonraki mumun açılışı. "
             + "Tablodaki yüzdeler komisyonsuz, üstteki özet %0,3 komisyon düşülmüş net değerdir. "
             + "Son 25 sinyal gösterilir. Veri gecikmelidir; örnek sayısı azken yanıltıcı olabilir.</p>"
-            + "</details>" + B)
-    h = h.replace(HEDEF, HEDEF + kutu, 1)
+            + "</details>" + b)
+
+
+def main():
+    h = open(D + "index.html", encoding="utf-8").read()
+    for c in KUTULAR:
+        a, b = "<!--" + c["m"] + "-->", "<!--/" + c["m"] + "-->"
+        h = re.sub(re.escape(a) + ".*?" + re.escape(b), "", h, flags=re.S)
+    if HEDEF not in h:
+        print("hedef yer bulunamadi")
+        return
+    kutular = "".join(kutu(c) for c in KUTULAR)
+    h = h.replace(HEDEF, HEDEF + kutular, 1)
     open(D + "index.html", "w", encoding="utf-8").write(h)
-    print("indikator kutusu eklendi:", len(s), "sinyal")
+    print("indikator kutulari eklendi")
 
 
 main()
