@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Uyumsuzluk testi</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>RSI UYUMSUZLUK + HACİM TESTİ
+Dönem: 01.11.2023 - 29.09.2026 · hisse: 512
+Eğitim: 01.11.2023 - 08.08.2025 · Test: sonrası
+Likit hisseler (günlük işlem ≥2 milyon TL), RSI(14).
+Dip/tepe 3 mum sonra onaylanır, sinyal o gün kapanışta verilir (geleceği görmez).
+Pozitif uyumsuzluk: fiyat daha düşük dip, RSI daha yüksek dip.
+Negatif uyumsuzluk: fiyat daha yüksek tepe, RSI daha düşük tepe.
+Hacim = sinyal gününün ve önceki 2 günün en yüksek hacim oranı (20g ort.na göre).
+Giriş: sinyalden sonraki gün açılış. Maliyet %0.3. Getiriler net.
+1g = o gün açılıştan kapanışa · 3g = açılıştan 3. gün kapanışa
+eğ/test = eğitim ve test dönemi ortalaması · ok = 1g ve 3g eğitim+test hepsi pozitif
+
+grup                           n tavan%     1g    eğ1  test1     3g    eğ3  test3  ok
+--- TABAN ---
+tüm günler (rastgele)     361062    2.6  -0.42  -0.39  -0.46  -0.31  -0.14  -0.54    
+hacim ≥2x (uyumsuzluksuz)  65815    5.0  -0.59  -0.56  -0.65  -0.62  -0.41  -0.93    
+hacim ≥3x (uyumsuzluksuz)  28826    6.5  -0.69  -0.65  -0.76  -0.83  -0.62  -1.14    
+
+--- POZİTİF UYUMSUZLUK (alım adayı) ---
+uyumsuzluk (hepsi)          3502    1.9  -0.47  -0.53  -0.38  -0.51  -0.58  -0.40    
++ hacim ≥1.5x               1164    3.4  -0.72  -0.66  -0.79  -0.92  -0.80  -1.09    
++ hacim ≥2x                  698    4.6  -0.81  -0.78  -0.84  -1.08  -0.84  -1.42    
++ hacim ≥3x                  314    4.8  -0.98  -0.98  -0.97  -1.51  -1.42  -1.62    
++ RSI dip &lt;35                978    2.0  -0.31  -0.32  -0.29  -0.35  -0.44  -0.17    
++ RSI dip &lt;35 + hacim ≥2x    169    6.5  -0.78  -0.78  -0.76  -0.84  -1.01  -0.55    
++ RSI farkı ≥5              1096    1.8  -0.51  -0.58  -0.39  -0.68  -0.72  -0.60    
++ RSI farkı ≥5 + hacim ≥2x   265    4.2  -0.77  -0.67  -0.90  -1.13  -0.73  -1.67    
++ sinyal günü yeşil         1584    2.7  -0.45  -0.44  -0.47  -0.71  -0.69  -0.74    
++ yeşil + hacim ≥2x          354    5.9  -0.78  -0.56  -1.09  -1.28  -0.85  -1.88    
++ yeşil + hacim ≥2x + RSI&lt;35    94    8.5  -1.03  -0.84  -1.33  -0.73  -0.74  -0.72    
+
+--- NEGATİF UYUMSUZLUK (sat/kaçın) ---
+uyumsuzluk (hepsi)          3339    2.3  -0.45  -0.43  -0.49  -0.50  -0.51  -0.48    
++ hacim ≥2x                  421    4.5  -0.42  -0.49  -0.33  -0.69  -0.93  -0.32    
++ hacim ≥3x                  181    6.1  -0.33  -0.47  -0.08  -0.68  -1.59   0.86    
++ RSI tepe &gt;65              1232    3.2  -0.37  -0.40  -0.31  -0.25  -0.45   0.04    
++ RSI tepe &gt;65 + hacim ≥2x   124    4.0  -0.36  -0.80   0.45   0.27  -1.08   2.72    
++ sinyal günü kırmızı       1996    2.3  -0.53  -0.55  -0.50  -0.56  -0.46  -0.68    
++ kırmızı + hacim ≥2x        243    2.9  -0.67  -0.92  -0.30  -1.01  -1.76   0.10    
+
+Okuma: pozitif uyumsuzlukta net 1g/3g taban satırından belirgin yüksek ve
+ok sütununda + varsa umut var. Aksi halde kenar yok demektir.
+Negatif uyumsuzlukta getiri tabandan belirgin düşükse &#x27;kaçın&#x27; sinyali işe yarıyor demektir.</pre></body></html>
