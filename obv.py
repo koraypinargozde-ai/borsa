@@ -35,6 +35,12 @@ def yv(z, d=2):
     return round(float(z), d)
 
 
+def jdef(o):
+    if hasattr(o, "item"):
+        return o.item()
+    return str(o)
+
+
 def tara(x, ad):
     x = x.dropna(subset=["Open", "High", "Low", "Close"]).copy()
     if len(x) < 200:
@@ -187,7 +193,7 @@ def gun_sonuc(S):
             s.setdefault("gk", [])
             continue
         dz = pd.Timestamp(s["z"][:10])
-        k = cs.index.searchsorted(dz)
+        k = int(cs.index.searchsorted(dz))
         if k >= len(cs) or cs.index[k] != dz:
             s.setdefault("gk", [])
             continue
@@ -203,7 +209,7 @@ def gun_sonuc(S):
             gk.append(yv((float(cs.iloc[j]) / g - 1) * 100))
         last = len(cs) - 1
         s["gk"] = gk
-        s["sg"] = last - k
+        s["sg"] = int(last - k)
         s["ss"] = yv((float(cs.iloc[last]) / g - 1) * 100)
 
 
@@ -214,7 +220,7 @@ except Exception as e:
 
 simdi = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%d.%m.%Y %H:%M")
 json.dump({"g": simdi, "s": S, "a": AYAR}, open("docs/obv.json", "w", encoding="utf-8"),
-          ensure_ascii=False)
+          ensure_ascii=False, default=jdef)
 
 
 def ozet(key):
