@@ -50,7 +50,8 @@ def tara():
             if sb + 1 >= N:
                 if not (stop < c[-1] < Tg[0]):
                     continue
-                r.update(durum="giriş bekliyor", giris=None, hit=[False] * 3, gun=0, sonuc=None)
+                r.update(durum="giriş bekliyor", giris=None, cik=None,
+                         hit=[False] * 3, gun=0, sonuc=None)
                 kayit.append(r)
                 continue
             e = sb + 1
@@ -59,12 +60,18 @@ def tara():
                 continue
             hit = [False] * 3
             stopped = False
+            stop_fiyat = stop
             sonbar = min(e + hk.MAXD - 1, N - 1)
             gun = 0
             for j in range(e, sonbar + 1):
                 gun = j - e + 1
-                if (j > e and o[j] <= stop) or l[j] <= stop:
+                if j > e and o[j] <= stop:
                     stopped = True
+                    stop_fiyat = float(o[j])   # boşlukla açıldıysa açılıştan çık
+                    break
+                if l[j] <= stop:
+                    stopped = True
+                    stop_fiyat = stop
                     break
                 for i in range(3):
                     if h[j] >= Tg[i]:
@@ -75,12 +82,12 @@ def tara():
             if hit[2]:
                 durum, cik = "T3 ✔ tamam", Tg[2]
             elif stopped:
-                durum, cik = "STOP", stop
+                durum, cik = "STOP", stop_fiyat
             elif dolu:
                 durum, cik = "süre doldu", c[sonbar]
             else:
                 durum, cik = "açık", c[-1]
-            r.update(durum=durum, giris=entry, hit=hit, gun=int(gun),
+            r.update(durum=durum, giris=entry, cik=float(cik), hit=hit, gun=int(gun),
                      sonuc=float((cik / entry - 1) * 100))
             kayit.append(r)
     kayit.sort(key=lambda r: r["sb"])
@@ -91,6 +98,11 @@ def pc(x):
     return f"{x:+.1f}".replace(".", ",") + "%"
 
 
+def renkli(x):
+    renk = "#3fb950" if x >= 0 else "#f85149"
+    return f"<span style='color:{renk}'>{pc(x)}</span>"
+
+
 def kutu(j):
     r = j["r"]
     s = ["<div style='margin:14px 0;padding:12px;border-radius:12px;background:#161b22;"
@@ -98,8 +110,9 @@ def kutu(j):
     s.append(f"<div style='font-weight:700;font-size:15px'>📐 Harmonik boğa takibi "
              f"(Gartley / Cypher) ({len(r)})</div>")
     s.append("<div style='opacity:.7;font-size:11px;margin:2px 0 8px'>Giriş: onaydan sonraki "
-             "ilk açılış · stop: X'in %0,5 ötesi · hedefler D→A %38,2 / %61,8 / %100 · "
-             "en fazla 20 gün · henüz canlı doğrulanmadı, sadece takip</div>")
+             "ilk açılış · stop: X'in %0,5 ötesi (boşlukla açılırsa açılıştan çıkış) · "
+             "hedefler D→A %38,2 / %61,8 / %100 · en fazla 20 gün · "
+             "henüz canlı doğrulanmadı, sadece takip</div>")
     if not r:
         s.append("<div style='opacity:.7'>Şu an aktif sinyal yok.</div>")
     for x in r:
@@ -107,18 +120,23 @@ def kutu(j):
         if x["giris"] is None:
             ozet = f"giriş bekliyor · şimdi {hk.fp(son)}"
         else:
-            renk = "#3fb950" if x["sonuc"] >= 0 else "#f85149"
-            ozet = (f"{x['durum']} · <span style='color:{renk}'>{pc(x['sonuc'])}</span>"
-                    f" · şimdi {hk.fp(son)}")
+            fark = (son / x["giris"] - 1) * 100
+            if x["durum"] == "açık":
+                ozet = f"açık · şimdi {hk.fp(son)} ({renkli(fark)})"
+            else:
+                ozet = (f"{x['durum']} ({renkli(x['sonuc'])}) · "
+                        f"şimdi {hk.fp(son)} ({renkli(fark)})")
         s.append("<details style='border-top:1px solid #30363d;padding:6px 0'>"
                  f"<summary><b>{H.escape(x['hisse'])}</b> {x['ad']} · {x['tarih']} · {ozet}</summary>"
                  "<div style='padding:4px 0 2px 12px;font-size:12px'>")
         vt = x.get("vt", "")
-        etiket = f" ({vt} kapanışı)" if vt else ""
+        etiket = f" · {vt} kapanışı" if vt else ""
         if x["giris"] is not None:
             fark = (son / x["giris"] - 1) * 100
             s.append(f"Giriş {hk.fp(x['giris'])} · {x['gun']}. gün<br>")
-            s.append(f"Şimdi {hk.fp(son)}{etiket} · girişe göre {pc(fark)}<br>")
+            if x["durum"] != "açık" and x.get("cik") is not None:
+                s.append(f"Çıkış {hk.fp(x['cik'])} ({renkli(x['sonuc'])}) · {x['durum']}<br>")
+            s.append(f"Şimdi {hk.fp(son)} ({renkli(fark)}){etiket}<br>")
         else:
             s.append(f"Şimdi {hk.fp(son)}{etiket}<br>")
         s.append(f"Stop {hk.fp(x['stop'])}<br>")
@@ -127,7 +145,7 @@ def kutu(j):
             s.append(f"T{i + 1} {hk.fp(t)}{tik}<br>")
         s.append("</div></details>")
     s.append(f"<div style='opacity:.5;font-size:10px;margin-top:6px'>Günlük mum verisiyle, "
-             f"2 saatte bir yenilenir</div></div>")
+             f"2 saatte bir yenilenir · yüzdeler girişe göre, masrafsız</div></div>")
     return "".join(s)
 
 
