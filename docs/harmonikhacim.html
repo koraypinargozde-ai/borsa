@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Harmonik hacim testi</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST HARMONİK + HACİM TESTİ (boğa formasyonları)
+Dönem: 17.11.2023 - 24.09.2026 · hisse: 151 · sinyal: 174
+Eğitim: 17.11.2023-04.06.2025, test: sonrası (%60/%40)
+Giriş: onaydan sonraki ilk açılış · stop: X&#x27;in %0,5 ötesi · hedefler D→A %38,2/%61,8/%100
+T1 = T1&#x27;e ulaşma %, stp = T1&#x27;den önce stop %, K = kademeli net getiri (%), taban = rastgele gün
+Hacim grupları sinyallerin üçte biri olacak şekilde bölünür (düşük/orta/yüksek).
+Kenar kriteri: yüksek grupta K taban üstünde VE eğ ile test ikisi de pozitif, n yeterli.
+Test sütunundaki n küçükse (n&lt;30) rakama güvenme.
+
+=== TÜM BOĞA FORMASYONLARI ===
+sinyal: 174
+grup         n   T1  stp      K  taban     eğ  test nTest
+TÜMÜ       174  65%  29%  +0.62  +0.25  -0.43 +2.16 n70
+-- D günü hacmi / 20g ort (kesim 0.59x / 0.85x)
+düşük       58  69%  21%  +0.18  -1.33  -0.15 +0.76 n21
+orta        58  59%  34%  +0.72  +0.90  -0.66 +4.06 n17
+yüksek      58  67%  31%  +0.95  +1.18  -0.45 +2.08 n32
+-- D→onay 4 gün ort hacim / 20g ort (kesim 0.62x / 0.84x)
+düşük       58  69%  22%  +1.74  -0.42  +2.54 +0.76 n26
+orta        58  69%  24%  +0.32  -0.25  -1.15 +4.95 n14
+yüksek      58  57%  40%  -0.22  +1.42  -2.68 +2.08 n30
+-- Onay günü hacmi / 20g ort (kesim 0.54x / 0.82x)
+düşük       58  67%  22%  +1.61  -0.14  +1.63 +1.58 n27
+orta        58  69%  29%  +1.03  +0.76  -0.35 +3.14 n23
+yüksek      58  59%  34%  -0.80  +0.13  -2.18 +1.83 n20
+
+=== SADECE GARTLEY + CYPHER ===
+sinyal: 110
+grup         n   T1  stp      K  taban     eğ  test nTest
+TÜMÜ       110  75%  17%  +1.06  +0.07  -0.34 +3.25 n43
+-- D günü hacmi / 20g ort (kesim 0.55x / 0.77x)
+düşük       37  76%  14%  +1.04  -1.63  +0.32 +2.22 n14
+orta        36  67%  28%  +0.77  +0.32  -1.04 +4.88 n11
+yüksek      37  84%  11%  +1.36  +1.53  -0.23 +3.04 n18
+-- D→onay 4 gün ort hacim / 20g ort (kesim 0.58x / 0.81x)
+düşük       37  76%  14%  +2.52  -1.63  +2.94 +1.91 n15
+orta        36  75%  19%  -0.39  -0.40  -1.76 +3.71 n9
+yüksek      37  76%  19%  +1.01  +2.23  -2.23 +4.08 n19
+-- Onay günü hacmi / 20g ort (kesim 0.54x / 0.82x)
+düşük       37  76%  14%  +1.79  -1.42  +1.80 +1.78 n16
+orta        36  75%  22%  +1.39  +0.72  -0.82 +5.29 n13
+yüksek      37  76%  16%  +0.01  +0.93  -1.82 +3.03 n14
+
+=== GARTLEY ===
+sinyal: 63
+grup         n   T1  stp      K  taban     eğ  test nTest
+TÜMÜ        63  75%  16%  +1.74  -0.62  +0.38 +3.68 n26
+-- D günü hacmi / 20g ort (kesim 0.55x / 0.74x)
+düşük       21  67%  19%  +0.99  -3.73  +1.03 +0.92 n9
+orta        21  81%  14%  +2.89  +0.36  -0.25 +9.17 n7
+yüksek      21  76%  14%  +1.35  +1.52  +0.47 +2.32 n10
+-- D→onay 4 gün ort hacim / 20g ort (kesim 0.63x / 0.80x)
+düşük       21  71%  14%  +3.10  -2.96  +3.32 +2.85 n10
+orta        21  76%  14%  -0.05  -0.32  -1.13 +4.57 n4
+yüksek      21  76%  19%  +2.17  +1.43  -0.36 +4.07 n12
+-- Onay günü hacmi / 20g ort (kesim 0.54x / 0.81x)
+düşük       21  76%  10%  +2.90  -1.00  +4.06 +2.03 n12
+orta        21  81%  14%  +3.16  -1.71  +2.38 +4.43 n8
+yüksek      21  67%  24%  -0.83  +0.87  -3.56 +5.99 n6
+
+=== CYPHER ===
+sinyal: 47
+grup         n   T1  stp      K  taban     eğ  test nTest
+TÜMÜ        47  77%  19%  +0.15  +0.99  -1.23 +2.58 n17
+-- D günü hacmi / 20g ort (kesim 0.53x / 0.84x)
+düşük       16  88%   6%  +1.11  +1.13  -0.47 +4.56 n5
+orta        15  60%  33%  -0.64  -0.05  +0.07 -2.61 n4
+yüksek      16  81%  19%  -0.07  +1.83  -4.09 +3.94 n8
+-- D→onay 4 gün ort hacim / 20g ort (kesim 0.54x / 0.86x)
+düşük       16  81%  12%  +1.16  +0.01  +1.67 +0.04 n5
+orta        15  73%  27%  -0.23  -0.41  -1.84 +3.01 n5
+yüksek      16  75%  19%  -0.52  +3.29  -4.10 +4.09 n7
+-- Onay günü hacmi / 20g ort (kesim 0.53x / 0.83x)
+düşük       16  75%  19%  +0.58  -1.16  -0.17 +2.23 n5
+orta        15  67%  33%  -0.94  +4.21  -4.12 +5.42 n5
+yüksek      16  88%   6%  +0.73  +0.13  +0.68 +0.81 n7
+</pre></body></html>
