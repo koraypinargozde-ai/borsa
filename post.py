@@ -24,9 +24,12 @@ def oku():
     return m.group(1), m.group(2), rows
 
 
-def eksik(x, s10):
+def eksik(x, s10, s18):
     # sonucu henuz tamamlanmamis kayit mi?
     if x["r1"] is None or x["r3"] is None:
+        return True
+    # kurumsal takip: gun gun kapanislar 10 gune kadar dolsun
+    if x.get("gk") is not None and len(x["gk"]) < 10 and x["d"] >= s18:
         return True
     return x["d"] >= s10 and ("mx" in x) and (
         x["mx"] is None or x["xr3"] is None or x.get("r0") is None)
@@ -34,7 +37,8 @@ def eksik(x, s10):
 
 def sonuclari_bul(hist, kes):
     s10 = (datetime.datetime.strptime(kes, "%Y-%m-%d") - datetime.timedelta(days=10)).strftime("%Y-%m-%d")
-    bek = sorted({x["t"] for x in hist if eksik(x, s10)})
+    s18 = (datetime.datetime.strptime(kes, "%Y-%m-%d") - datetime.timedelta(days=18)).strftime("%Y-%m-%d")
+    bek = sorted({x["t"] for x in hist if eksik(x, s10, s18)})
     if not bek:
         return
     tk = list(dict.fromkeys([t + ".IS" for t in bek] + ["XU100.IS", "THYAO.IS", "GARAN.IS"]))
@@ -48,22 +52,37 @@ def sonuclari_bul(hist, kes):
             continue
         for t in tk[i:i + 50]:
             try:
-                s = v[t][["Close", "High"]].dropna()
-                s = s[[k.strftime("%Y-%m-%d") <= kes for k in s.index]]
+                s0 = v[t][["Close", "High"]].dropna()
+                # en son fiyat (bugunun yarim mumu dahil) = "Simdi"
+                sn = (s0.index[-1].strftime("%Y-%m-%d"), float(s0["Close"].values[-1])) if len(s0) else None
+                s = s0[[k.strftime("%Y-%m-%d") <= kes for k in s0.index]]
                 fiyat[t[:-3]] = ([k.strftime("%Y-%m-%d") for k in s.index],
-                                 list(s["Close"].values), list(s["High"].values))
+                                 list(s["Close"].values), list(s["High"].values), sn)
             except Exception:
                 pass
     xs = fiyat.get("XU100")
     for x in hist:
         if x["t"] not in fiyat:
             continue
-        g, f, hh = fiyat[x["t"]]
+        g, f, hh, sn = fiyat[x["t"]]
+        # kurumsal takip: ilk gorulme fiyatina gore "simdi"
+        if x.get("gk") is not None and sn and x.get("ps") and x.get("px"):
+            x["ss"] = round(float(sn[1] / x["px"] - 1) * 100, 2)
+            x["sp"] = round(float(sn[1]), 2)
+            x["sd"] = sn[0]
         if x["d"] not in g:
             continue
         p = g.index(x["d"])
         # ilk gorulme kaydi (ps) varsa getiri o anki fiyattan, yoksa gunun kapanisindan olculur
         taban = x["px"] if x.get("ps") else f[p]
+        # kurumsal takip: 1. gun = sinyal gunu kapanisi, 2. gun = ertesi gun ... 10. gune kadar
+        if x.get("gk") is not None:
+            gk = x["gk"]
+            for n in range(len(gk), 10):
+                if p + n < len(g):
+                    gk.append(round(float(f[p + n] / taban - 1) * 100, 2))
+                else:
+                    break
         if x["r1"] is None and p + 1 < len(g):
             x["r1"] = round(float(f[p + 1] / taban - 1) * 100, 2)
         if x["r3"] is None and p + 3 < len(g):
@@ -132,7 +151,8 @@ def xu_c():
 
 
 def bayrak(r, xc):
-    # P = para girisi, G = GUCLU, E = ERKEN, H = HACIM PATLAMASI (sayfadaki rozet kurallariyla ayni)
+    # P = para girisi, G = GUCLU, E = ERKEN, H = HACIM PATLAMASI, K = KURUMSAL ALIM
+    # (sayfadaki rozet kurallariyla ayni)
     t = r[6]
     para = "Para" in t
     ustun = xc is None or r[3] > xc
@@ -145,12 +165,15 @@ def bayrak(r, xc):
         k.append("E")
     if r[4] >= 10 and r[5] >= 80 and 0.5 <= r[3] <= 6 and "Tavana" not in t:
         k.append("H")
+    # K: buyuk hacim ama fiyat henuz primlenmemis (0..+3%), guclu kapanis, para girisi, endeksten guclu
+    if r[4] >= 3 and 0 <= r[3] <= 3 and r[5] >= 70 and para and ustun:
+        k.append("K")
     return k
 
 
 def ilk_gor(rows, d, simdi, xc):
     # Her hissenin o gun listede ILK gorundugu saat ve fiyat (docs/ilk.json),
-    # ayrica her rozetin (P/G/E/H) ilk ciktigi an. Veri tarihi bugun degilse yeni kayit yazilmaz.
+    # ayrica her rozetin (P/G/E/H/K) ilk ciktigi an. Veri tarihi bugun degilse yeni kayit yazilmaz.
     F = D + "ilk.json"
     try:
         st = json.load(open(F)) if os.path.exists(F) else {}
@@ -248,6 +271,7 @@ summary{font-weight:600;cursor:pointer}
 .b p{margin:6px 0 0;font-size:13px;color:var(--mute)}.b p b{color:var(--ink)}
 table.st{width:100%;font-size:13px;border-collapse:collapse;margin-top:8px}
 .st th,.st td{text-align:right;padding:4px 2px}.st th:first-child,.st td:first-child{text-align:left}.st th{color:var(--mute);font-weight:500}
+.kb{font:inherit;font-weight:600;background:none;border:0;color:inherit;padding:0;text-align:left;cursor:pointer}
 input{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);margin:2px 0 8px}
 .chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px}
 .chips button{font:inherit;font-size:13px;white-space:nowrap;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px}
@@ -281,6 +305,7 @@ button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{o
 <details class="b" id="fark"></details>
 <details class="b" id="sonuc"></details>
 <details class="b" id="perf"></details>
+<details class="b" id="kurum"></details>
 <input id="q" type="search" placeholder="Hisse ara (örn. ETILR)" autocomplete="off" aria-label="Hisse ara">
 <div class="chips" id="chips"></div>
 <div class="list"><div class="row head" id="head"></div><div id="rows"></div></div>
@@ -292,7 +317,7 @@ var D=V.rows;
 var F=[["all","Hepsi"],["near","Tavana yakın"],["vol","Hacim 2x+"],["hi","Puan 50+"]];
 var COLS=[["sym","Hisse"],["score","Puan"],["chg","Değ.%"],["vol","Hacim"]];
 var IX={sym:0,score:1,chg:3,vol:4};
-var S={sort:"score",dir:-1,f:"all",q:"",open:null,pt:"E"};
+var S={sort:"score",dir:-1,f:"all",q:"",open:null,pt:"E",ko:null};
 function fmt(n){return n.toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function f1(n){return n.toLocaleString("tr-TR",{minimumFractionDigits:1,maximumFractionDigits:1})}
 function sg(n){return (n>0?"+":"")+f1(n)}
@@ -361,7 +386,35 @@ function perf(){
     });
     h+="</table>";
   }
-  return h+"<p>Her sinyal, rozetin o gün ilk çıktığı andaki fiyata göre ölçülür. Adet yanındaki (+n) sonucu henüz belli olmayanlardır. Aynı gün: ilk fiyattan gün sonu kapanışa getiri. Zirve: günün en yüksek fiyatı (sinyalden önceki tepe de olabilir). Tavan: günün en yüksek fiyatı önceki kapanışa göre yaklaşık +%9,8 olduysa sayılır, tahminidir. En iyi: sonraki 3 işgünündeki en yüksek fiyatın ilk fiyata göre artışı. BIST farkı: hissenin getirisi eksi BIST 100 getirisi (üstte 1 gün, altta 3 gün). 💰 grubu ★ ve 🌱 sinyallerini de kapsar; bir hisse gün içinde birden fazla gruba girebilir. 🔥 grubu 💰'dan bağımsızdır: hacim 10x+, kapanış gücü 80+, değişim +0,5 ile +6 arası. Kayıtlar bu özelliğin açıldığı günden itibaren birikir. Örnek sayısı azken yanıltıcı olabilir.</p>";
+  return h+"<p>Her sinyal, rozetin o gün ilk çıktığı andaki fiyata göre ölçülür. Adet yanındaki (+n) sonucu henüz belli olmayanlardır. Aynı gün: ilk fiyattan gün sonu kapanışa getiri. Zirve: günün en yüksek fiyatı (sinyalden önceki tepe de olabilir). Tavan: günün en yüksek fiyatı önceki kapanışa göre yaklaşık +%9,8 olduysa sayılır, tahminidir. En iyi: sonraki 3 işgünündeki en yüksek fiyatın ilk fiyata göre artışı. BIST farkı: hissenin getirisi eksi BIST 100 getirisi (üstte 1 gün, altta 3 gün). 💰 grubu ★ ve 🌱 sinyallerini de kapsar; bir hisse gün içinde birden fazla gruba girebilir. 🔥 grubu 💰'dan bağımsızdır: hacim 10x+, kapanış gücü 80+, değişim +0,5 ile +6 arası. 🏦 grubu: hacim 3x+, değişim 0 ile +3 arası, kapanış gücü 70+, 💰 var, endeksten güçlü; gün gün takibi aşağıdaki 🏦 kutusunda. Kayıtlar bu özelliğin açıldığı günden itibaren birikir. Örnek sayısı azken yanıltıcı olabilir.</p>";
+}
+function kutu(){
+  var K=V.kt||[];
+  var h="<summary>🏦 Kurumsal alım takibi ("+K.length+")</summary>";
+  if(!K.length){
+    return h+"<p>Henüz kayıt yok. Bir hisse 🏦 kuralına uyunca ilk fiyatı burada kaydedilir, sonraki günlerin kapanışı gün gün dolar.</p>";
+  }
+  function gh(x,n){
+    var g=x[4][n-1];
+    if(g==null)return "<span style='color:var(--mute)'>bekliyor</span>";
+    return fmt(x[3]*(1+g/100))+"<br>"+rt(g);
+  }
+  h+="<table class=st><tr><th>Hisse</th><th>İlk giriş</th><th>1. gün</th><th>2. gün</th><th>3. gün</th><th>Şimdi</th></tr>";
+  K.forEach(function(x){
+    var key=x[0]+x[1],o=S.ko===key;
+    h+="<tr><td><button class=kb data-k='"+key+"'>"+x[0]+(o?" ▾":" ▸")+"</button><br><small style='color:var(--mute)'>"+x[1]+" "+(x[2]||"")+" · "+x[7]+" puan</small></td><td>"+fmt(x[3])+"</td><td>"+gh(x,1)+"</td><td>"+gh(x,2)+"</td><td>"+gh(x,3)+"</td><td>"+(x[6]==null?"-":fmt(x[6])+"<br>"+rt(x[5]))+"</td></tr>";
+    if(o){
+      var l="";
+      for(var n=1;n<=10;n++){
+        var g=x[4][n-1];
+        if(g==null)break;
+        l+=n+". gün: "+fmt(x[3]*(1+g/100))+" TL ("+sg(g)+"%)<br>";
+      }
+      h+="<tr><td colspan=6 style='text-align:left;font-size:12px;color:var(--mute)'>"+(l||"Henüz gün sonu kapanışı yok.")+(x[8]?"Şimdi fiyatının tarihi: "+x[8]+"<br>":"")+"</td></tr>";
+    }
+  });
+  h+="</table>";
+  return h+"<p>1. gün: sinyalin geldiği günün kapanışı, 2. gün: ertesi işgünü kapanışı, böyle devam eder; işgünü geçtikçe dolar. Yüzdeler hissenin ilk görüldüğü fiyata göre. Şimdi: Yahoo'daki son fiyat (gecikmeli). Hisse adına dokununca 10. güne kadar tüm günler açılır. Kural: hacim 3x+, değişim 0 ile +3 arası, kapanış gücü 70+, 💰 para girişi, endeksten güçlü. Bu bir al sinyali değil, izleme grubudur; geçmiş testlerde kenar bulunamadı. Örnek sayısı azken yanıltıcı olabilir.</p>";
 }
 function draw(){
   document.getElementById("meta").textContent="Veri tarihi "+V.vt+" · Güncelleme "+V.gt+" · Veri gecikmelidir (Yahoo Finance)";
@@ -394,6 +447,7 @@ function draw(){
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
   if(b.dataset.pt){S.pt=b.dataset.pt;var pe=document.getElementById("perf");var was=pe.open;pe.innerHTML=perf();pe.open=was;return}
+  if(b.dataset.k){S.ko=S.ko===b.dataset.k?null:b.dataset.k;var ke=document.getElementById("kurum");var wk=ke.open;ke.innerHTML=kutu();ke.open=wk;return}
   if(b.dataset.f){S.f=b.dataset.f}
   else if(b.dataset.s){if(S.sort===b.dataset.s)S.dir*=-1;else{S.sort=b.dataset.s;S.dir=b.dataset.s==="sym"?1:-1}}
   else if(b.dataset.o){S.open=S.open===b.dataset.o?null:b.dataset.o}
@@ -404,6 +458,7 @@ document.getElementById("q").addEventListener("input",function(e){S.q=e.target.v
 document.getElementById("fark").innerHTML=fark();
 document.getElementById("sonuc").innerHTML=sonuc();
 document.getElementById("perf").innerHTML=perf();
+document.getElementById("kurum").innerHTML=kutu();
 var XU=null;
 function guclu(r){return r[1]>=70&&r[4]>=3&&r[3]>=3&&r[3]<=8&&(r[6]+"").indexOf("Para")>=0&&(XU==null||r[3]>XU)}
 var draw0=draw;
@@ -424,6 +479,12 @@ var pass1=pass;
 pass=function(r){if(S.f==="hot")return (!S.q||r[0].indexOf(S.q)>=0)&&patla(r);return pass1(r)};
 var draw2=draw;
 draw=function(){draw2();document.querySelectorAll("#rows .item").forEach(function(it){var s=it.querySelector(".sym");if(!s)return;var k=s.textContent.replace(/[^A-Z0-9]/g,"");var r=D.filter(function(z){return z[0]===k})[0];if(!r||!patla(r))return;s.insertAdjacentHTML("beforeend"," <b>🔥</b>");var dt=it.querySelectorAll(".det dt");for(var i=0;i<dt.length;i++){if(dt[i].textContent==="Sinyal"&&dt[i].nextElementSibling){dt[i].nextElementSibling.insertAdjacentHTML("afterbegin","<span class='tag'>PATLAMA</span>")}}})};
+function kur(r){return r[4]>=3&&r[3]>=0&&r[3]<=3&&r[5]>=70&&(r[6]+"").indexOf("Para")>=0&&(XU==null||r[3]>XU)}
+F.push(["kur","🏦 Kurumsal"]);
+var pass2=pass;
+pass=function(r){if(S.f==="kur")return (!S.q||r[0].indexOf(S.q)>=0)&&kur(r);return pass2(r)};
+var draw3=draw;
+draw=function(){draw3();document.querySelectorAll("#rows .item").forEach(function(it){var s=it.querySelector(".sym");if(!s)return;var k=s.textContent.replace(/[^A-Z0-9]/g,"");var r=D.filter(function(z){return z[0]===k})[0];if(!r||!kur(r))return;s.insertAdjacentHTML("beforeend"," <b>🏦</b>");var dt=it.querySelectorAll(".det dt");for(var i=0;i<dt.length;i++){if(dt[i].textContent==="Sinyal"&&dt[i].nextElementSibling){dt[i].nextElementSibling.insertAdjacentHTML("afterbegin","<span class='tag'>KURUMSAL</span>")}}})};
 draw();
 </script></body></html>'''
 
@@ -463,7 +524,7 @@ def main():
     sinir = (simdi - datetime.timedelta(days=120)).strftime("%Y-%m-%d")
     hist = [x for x in hist if x["d"] >= sinir]
 
-    # Rozet sinyalleri (P = para girisi, G = GUCLU, E = ERKEN, H = HACIM PATLAMASI): docs/sinyal.json
+    # Rozet sinyalleri (P = para girisi, G = GUCLU, E = ERKEN, H = HACIM PATLAMASI, K = KURUMSAL): docs/sinyal.json
     SG = D + "sinyal.json"
     try:
         sig = json.load(open(SG)) if os.path.exists(SG) else []
@@ -475,11 +536,17 @@ def main():
         for kod, dk in fl.items():
             for t, v in dk.items():
                 e = eski.get((t, kod))
-                sig.append(e if e else {
+                if e:
+                    sig.append(e)
+                    continue
+                yeni_k = {
                     "d": d, "t": t, "k": kod, "px": v["p"], "ps": v["s"], "sc": v["sc"],
                     "c0": v["c"], "xc": v.get("x"),
                     "r1": None, "r3": None, "mx": None, "xr1": None, "xr3": None,
-                    "r0": None, "h0": None, "th": None, "tk": None})
+                    "r0": None, "h0": None, "th": None, "tk": None}
+                if kod == "K":
+                    yeni_k["gk"] = []
+                sig.append(yeni_k)
     sig = [x for x in sig if x["d"] >= sinir]
 
     sonuclari_bul(hist + sig, kes)
@@ -518,7 +585,15 @@ def main():
                    for x in sorted((x for x in sig if x["k"] == kod),
                                    key=lambda x: (x["d"], x.get("ps") or ""), reverse=True)][:20]
     perf = [sgrup(sig, "E", "🌱 Erken aday"), sgrup(sig, "G", "★ GÜÇLÜ"),
-            sgrup(sig, "P", "💰 Para girişi"), sgrup(sig, "H", "🔥 Patlama")]
+            sgrup(sig, "P", "💰 Para girişi"), sgrup(sig, "H", "🔥 Patlama"),
+            sgrup(sig, "K", "🏦 Kurumsal alım")]
+
+    # Kurumsal alim takibi: hisse, tarih, saat, ilk fiyat, gun gun kapanis getirileri (1. gun = sinyal gunu),
+    # simdi %, simdi fiyat, puan, simdi fiyat tarihi
+    kt = [[x["t"], gm(x["d"]), x.get("ps"), x["px"], x.get("gk", []), x.get("ss"), x.get("sp"), x["sc"],
+           gm(x["sd"]) if x.get("sd") else None]
+          for x in sorted((x for x in sig if x["k"] == "K"),
+                          key=lambda x: (x["d"], x.get("ps") or ""), reverse=True)][:30]
 
     veri = {
         "vt": vt, "gt": gt, "rows": rows,
@@ -530,6 +605,7 @@ def main():
         "son": son,
         "perf": perf,
         "sl": sl,
+        "kt": kt,
     }
     telegram(rows, d, gt)
     uygulama_dosyalari()
