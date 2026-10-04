@@ -46,7 +46,7 @@ def tara():
             stop, Tg = hk.seviyeler(yon, X, A, D)
             r = dict(hisse=hisse, ad=nm, tarih=x.index[sb].strftime("%d.%m.%y"),
                      sb=int(N - 1 - sb), stop=float(stop), T=[float(t) for t in Tg],
-                     son=float(c[-1]))
+                     son=float(c[-1]), vt=x.index[-1].strftime("%d.%m.%y"))
             if sb + 1 >= N:
                 if not (stop < c[-1] < Tg[0]):
                     continue
@@ -103,17 +103,24 @@ def kutu(j):
     if not r:
         s.append("<div style='opacity:.7'>Şu an aktif sinyal yok.</div>")
     for x in r:
+        son = x["son"]
         if x["giris"] is None:
-            ozet = f"giriş bekliyor · son {hk.fp(x['son'])}"
-            renk = "#9aa0a6"
+            ozet = f"giriş bekliyor · şimdi {hk.fp(son)}"
         else:
             renk = "#3fb950" if x["sonuc"] >= 0 else "#f85149"
-            ozet = f"{x['durum']} · <span style='color:{renk}'>{pc(x['sonuc'])}</span>"
+            ozet = (f"{x['durum']} · <span style='color:{renk}'>{pc(x['sonuc'])}</span>"
+                    f" · şimdi {hk.fp(son)}")
         s.append("<details style='border-top:1px solid #30363d;padding:6px 0'>"
                  f"<summary><b>{H.escape(x['hisse'])}</b> {x['ad']} · {x['tarih']} · {ozet}</summary>"
                  "<div style='padding:4px 0 2px 12px;font-size:12px'>")
+        vt = x.get("vt", "")
+        etiket = f" ({vt} kapanışı)" if vt else ""
         if x["giris"] is not None:
+            fark = (son / x["giris"] - 1) * 100
             s.append(f"Giriş {hk.fp(x['giris'])} · {x['gun']}. gün<br>")
+            s.append(f"Şimdi {hk.fp(son)}{etiket} · girişe göre {pc(fark)}<br>")
+        else:
+            s.append(f"Şimdi {hk.fp(son)}{etiket}<br>")
         s.append(f"Stop {hk.fp(x['stop'])}<br>")
         for i, t in enumerate(x["T"]):
             tik = " ✔" if x["hit"][i] else ""
