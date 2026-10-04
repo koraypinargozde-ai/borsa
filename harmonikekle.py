@@ -4,6 +4,7 @@ import html as H
 import harmonik as hk
 
 DOSYA = "docs/harmonik.json"
+GECMIS = "docs/harmonik_gecmis.json"
 SAYFA = "docs/index.html"
 ISARET = ("<!--HARM-->", "<!--/HARM-->")
 GRUPLAR = ("Gartley", "Cypher")
@@ -22,6 +23,22 @@ def eski_mi():
         return (simdi() - t).total_seconds() / 60 >= YENILE_DK, j
     except Exception:
         return True, None
+
+
+def kapali(x):
+    return x.get("giris") is not None and x.get("durum") != "açık"
+
+
+def gecmis_yukle():
+    try:
+        return json.load(open(GECMIS, encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def gecmis_kaydet(g):
+    os.makedirs("docs", exist_ok=True)
+    json.dump(g, open(GECMIS, "w", encoding="utf-8"), ensure_ascii=False)
 
 
 def tara():
@@ -103,49 +120,102 @@ def renkli(x):
     return f"<span style='color:{renk}'>{pc(x)}</span>"
 
 
-def kutu(j):
-    r = j["r"]
+def tarih_key(x):
+    try:
+        return dt.datetime.strptime(x["tarih"], "%d.%m.%y")
+    except Exception:
+        return dt.datetime(2000, 1, 1)
+
+
+def detay(x, kapanan):
+    son = x["son"]
+    vt = x.get("vt", "")
+    etiket = f" · {vt} kapanışı" if vt else ""
+    s = ["<div style='padding:4px 0 2px 12px;font-size:12px'>"]
+    if x.get("giris") is not None:
+        fark = (son / x["giris"] - 1) * 100
+        s.append(f"Giriş {hk.fp(x['giris'])} · {x['gun']}. gün<br>")
+        if kapanan and x.get("cik") is not None:
+            s.append(f"Çıkış {hk.fp(x['cik'])} ({renkli(x['sonuc'])}) · {x['durum']}<br>")
+        s.append(f"Şimdi {hk.fp(son)} ({renkli(fark)}){etiket}<br>")
+    else:
+        s.append("Giriş: sonraki işlem günü açılışı<br>")
+        s.append(f"Referans: {hk.fp(son)}{etiket}<br>")
+    s.append(f"Stop {hk.fp(x['stop'])}<br>")
+    for i, t in enumerate(x["T"]):
+        tik = " ✔" if x["hit"][i] else ""
+        s.append(f"T{i + 1} {hk.fp(t)}{tik}<br>")
+    s.append("</div>")
+    return "".join(s)
+
+
+def aktif_satir(x):
+    son = x["son"]
+    if x.get("giris") is None:
+        ozet = f"⏳ giriş bekliyor · referans {hk.fp(son)}"
+    else:
+        fark = (son / x["giris"] - 1) * 100
+        ozet = f"🔵 açık · şimdi {hk.fp(son)} ({renkli(fark)})"
+    return ("<details style='border-top:1px solid #30363d;padding:6px 0'>"
+            f"<summary><b>{H.escape(x['hisse'])}</b> {x['ad']} · {x['tarih']} · {ozet}</summary>"
+            + detay(x, False) + "</details>")
+
+
+def kapanan_satir(x):
+    d = x["durum"]
+    if d.startswith("T3"):
+        et = "✅ T3 tamam"
+    elif d == "STOP":
+        et = "❌ STOP"
+        if x["hit"][0]:
+            et += " (T1 görüldü)"
+    else:
+        et = "⏱ süre doldu"
+    ozet = f"{et} ({renkli(x['sonuc'])})"
+    return ("<details style='border-top:1px solid #30363d;padding:6px 0;opacity:.9'>"
+            f"<summary><b>{H.escape(x['hisse'])}</b> {x['ad']} · {x['tarih']} · {ozet}</summary>"
+            + detay(x, True) + "</details>")
+
+
+def ozet_satiri(kap):
+    n = len(kap)
+    if not n:
+        return "Henüz kapanan işlem yok."
+    t1 = sum(1 for x in kap if x["hit"][0])
+    t2 = sum(1 for x in kap if x["hit"][1])
+    t3 = sum(1 for x in kap if x["hit"][2])
+    st = sum(1 for x in kap if x["durum"] == "STOP")
+    sd = sum(1 for x in kap if x["durum"] == "süre doldu")
+    poz = sum(1 for x in kap if x["sonuc"] > 0)
+    ort = sum(x["sonuc"] for x in kap) / n
+    return (f"{n} işlem · T1 {t1} · T2 {t2} · T3 {t3} · ❌ stop {st} · ⏱ süre {sd} · "
+            f"kârda kapanan {poz}/{n} · ortalama {renkli(ort)}")
+
+
+def kutu(j, g):
+    r = j["r"] if j else []
+    aktif = [x for x in r if not kapali(x)]
+    kap = sorted(g.values(), key=tarih_key, reverse=True)[:40]
     s = ["<div style='margin:14px 0;padding:12px;border-radius:12px;background:#161b22;"
          "color:#e8eaed;font:13px/1.5 sans-serif'>"]
     s.append(f"<div style='font-weight:700;font-size:15px'>📐 Harmonik boğa takibi "
-             f"(Gartley / Cypher) ({len(r)})</div>")
+             f"(Gartley / Cypher)</div>")
     s.append("<div style='opacity:.7;font-size:11px;margin:2px 0 8px'>Giriş: onaydan sonraki "
              "ilk açılış · stop: X'in %0,5 ötesi (boşlukla açılırsa açılıştan çıkış) · "
              "hedefler D→A %38,2 / %61,8 / %100 · en fazla 20 gün · "
              "henüz canlı doğrulanmadı, sadece takip</div>")
-    if not r:
+    s.append(f"<div style='font-weight:600;margin-top:6px'>Aktif ({len(aktif)})</div>")
+    if not aktif:
         s.append("<div style='opacity:.7'>Şu an aktif sinyal yok.</div>")
-    for x in r:
-        son = x["son"]
-        if x["giris"] is None:
-            ozet = f"giriş bekliyor · şimdi {hk.fp(son)}"
-        else:
-            fark = (son / x["giris"] - 1) * 100
-            if x["durum"] == "açık":
-                ozet = f"açık · şimdi {hk.fp(son)} ({renkli(fark)})"
-            else:
-                ozet = (f"{x['durum']} ({renkli(x['sonuc'])}) · "
-                        f"şimdi {hk.fp(son)} ({renkli(fark)})")
-        s.append("<details style='border-top:1px solid #30363d;padding:6px 0'>"
-                 f"<summary><b>{H.escape(x['hisse'])}</b> {x['ad']} · {x['tarih']} · {ozet}</summary>"
-                 "<div style='padding:4px 0 2px 12px;font-size:12px'>")
-        vt = x.get("vt", "")
-        etiket = f" · {vt} kapanışı" if vt else ""
-        if x["giris"] is not None:
-            fark = (son / x["giris"] - 1) * 100
-            s.append(f"Giriş {hk.fp(x['giris'])} · {x['gun']}. gün<br>")
-            if x["durum"] != "açık" and x.get("cik") is not None:
-                s.append(f"Çıkış {hk.fp(x['cik'])} ({renkli(x['sonuc'])}) · {x['durum']}<br>")
-            s.append(f"Şimdi {hk.fp(son)} ({renkli(fark)}){etiket}<br>")
-        else:
-            s.append(f"Şimdi {hk.fp(son)}{etiket}<br>")
-        s.append(f"Stop {hk.fp(x['stop'])}<br>")
-        for i, t in enumerate(x["T"]):
-            tik = " ✔" if x["hit"][i] else ""
-            s.append(f"T{i + 1} {hk.fp(t)}{tik}<br>")
-        s.append("</div></details>")
-    s.append(f"<div style='opacity:.5;font-size:10px;margin-top:6px'>Günlük mum verisiyle, "
-             f"2 saatte bir yenilenir · yüzdeler girişe göre, masrafsız</div></div>")
+    for x in aktif:
+        s.append(aktif_satir(x))
+    s.append(f"<div style='font-weight:600;margin-top:14px'>Kapanan işlemler ({len(kap)})</div>")
+    s.append(f"<div style='opacity:.85;font-size:12px;margin:2px 0 6px'>{ozet_satiri(kap)}</div>")
+    for x in kap:
+        s.append(kapanan_satir(x))
+    s.append("<div style='opacity:.5;font-size:10px;margin-top:8px'>Günlük mum verisiyle, "
+             "2 saatte bir yenilenir · yüzdeler girişe göre, masrafsız · kapananlarda tüm pozisyon "
+             "stopta veya T3'te çıkar, T1/T2 sadece görüldü işareti</div></div>")
     return "".join(s)
 
 
@@ -169,6 +239,8 @@ def sayfaya_ekle(box):
 
 if __name__ == "__main__":
     yenile, j = eski_mi()
+    if not os.path.exists(GECMIS):
+        yenile = True
     if yenile:
         try:
             r = tara()
@@ -179,6 +251,13 @@ if __name__ == "__main__":
             j = dict(t=simdi().isoformat(), r=r)
             os.makedirs("docs", exist_ok=True)
             json.dump(j, open(DOSYA, "w", encoding="utf-8"), ensure_ascii=False)
-    if j:
-        sayfaya_ekle(kutu(j))
-        print("harmonik kutusu eklendi:", len(j["r"]), "sinyal")
+            g = gecmis_yukle()
+            for x in r:
+                if kapali(x):
+                    g[f"{x['hisse']}|{x['ad']}|{x['tarih']}"] = x
+            gecmis_kaydet(g)
+    g = gecmis_yukle()
+    if j or g:
+        sayfaya_ekle(kutu(j, g))
+        print("harmonik kutusu eklendi:", len(j["r"]) if j else 0, "sinyal,",
+              len(g), "kapanan")
