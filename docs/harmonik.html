@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Harmonik test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST HARMONİK FORMASYON TESTİ
+Dönem: 13.11.2023 - 24.09.2026 · hisse: 219 · sinyal: 283
+Giriş: onaydan sonraki ilk açılış · stop: X&#x27;in %0,5 ötesi (stop önce sayılır)
+Hedefler D&#x27;den A&#x27;ya: T1 %38,2 · T2 %61,8 · T3 %100 · en fazla 20 gün · masraf %0,3
+Ayı = short simülasyonu (BIST&#x27;te açığa satış yok; &#x27;düşüş geldi mi&#x27; ölçüsü)
+T1/T2/T3 = hedefe ulaşma % · stop = T1&#x27;den önce stop % · RR = T2/stop
+R1/R2/R3 = o hedefte çıkışın net ort. getirisi (%) · K = kademeli (1/3&#x27;er)
+taban = aynı stop/hedef yüzdesiyle rastgele gün · eğ/test = %60/%40 tarih ayrımı
+Eğitim: 13.11.2023-05.06.2025, test: sonrası
+
+=== BOĞA (yükseliş) ===
+grup              n   T1   T2   T3  stp   RR     R1    R2    R3     K  taban     eğ  test
+Gartley          63  75%  56%  32%  16%  0.9  +0.51 +1.96 +2.75 +1.74  -0.71  +0.25 +4.01 n25
+Bat              28  61%  36%  21%  29%  3.2  +0.30 -0.44 +1.18 +0.35  -1.80  -0.01 +0.90 n11
+Butterfly        36  36%  17%   3%  64% 20.0  -0.24 -0.17 -1.18 -0.53  -0.42  -1.06 +0.13 n16
+Cypher           47  77%  55%  30%  19%  0.7  -0.19 +0.34 +0.29 +0.15  -0.63  -1.23 +2.58 n17
+TÜMÜ            174  65%  44%  24%  29%  5.2  +0.13 +0.70 +1.02 +0.62  -0.80  -0.47 +2.26 n69
+
+=== AYI (düşüş) ===
+grup              n   T1   T2   T3  stp   RR     R1    R2    R3     K  taban     eğ  test
+Gartley          32  81%  53%  19%  16%  0.7  -0.86 -1.82 -3.01 -1.90  -1.96  -2.59 -0.56 n11
+Bat              26  62%  35%  12%  38%  1.1  -2.79 -4.30 -4.32 -3.80  -1.82  -3.56 -4.35 n8
+Butterfly        22  41%  14%   5%  59%  5.9  -0.66 -1.60 -1.38 -1.22  -0.44  -0.90 -1.47 n12
+Cypher           28  79%  61%  21%  21%  0.6  -0.76 -0.88 -3.15 -1.60  -0.58  -0.25 -2.77 n15
+TÜMÜ            109  67%  42%  15%  32%  1.9  -1.26 -2.12 -3.02 -2.13  -1.26  -2.10 -2.18 n46
+
+Yorum: K sütunu taban sütunundan belirgin yüksekse VE eğ ile test ikisi de pozitifse kenar var.
+Test sütunundaki n küçükse (n&lt;30) rakama güvenme.
+
+=== SON 12 SİNYAL (fiyatlarla) ===
+14.07.26 DNISI BOĞA Gartley
+  giriş 4,69 · stop 4,30 · T1 5,01 · T2 5,27 · T3 5,67
+  sonuç: T1 S T2 S T3 S · kademeli -8.61%
+29.07.26 ESCOM BOĞA Gartley
+  giriş 5,32 · stop 4,80 · T1 5,87 · T2 6,24 · T3 6,86
+  sonuç: T1 T T2 T T3 Z · kademeli +10.48%
+30.07.26 KTLEV BOĞA Cypher
+  giriş 46,01 · stop 35,90 · T1 47,22 · T2 50,78 · T3 56,54
+  sonuç: T1 T T2 T T3 T · kademeli +11.65%
+05.08.26 SDTTR BOĞA Butterfly
+  giriş 21,49 · stop 21,10 · T1 22,00 · T2 23,52 · T3 25,98
+  sonuç: T1 T T2 T T3 S · kademeli +3.04%
+07.08.26 TBORG AYI Cypher
+  giriş 132,60 · stop 141,10 · T1 131,49 · T2 128,71 · T3 124,20
+  sonuç: T1 S T2 S T3 S · kademeli -6.71%
+11.08.26 GEREL AYI Bat
+  giriş 40,78 · stop 47,48 · T1 39,64 · T2 35,72 · T3 29,36
+  sonuç: T1 T T2 T T3 Z · kademeli +6.04%
+14.08.26 YYAPI BOĞA Gartley
+  giriş 0,85 · stop 0,78 · T1 0,88 · T2 0,92 · T3 0,98
+  sonuç: T1 S T2 S T3 S · kademeli -10.89%
+18.08.26 DOCO AYI Gartley
+  giriş 11470,00 · stop 12107,74 · T1 11377,89 · T2 11117,11 · T3 10695,00
+  sonuç: T1 T T2 T T3 Z · kademeli +2.44%
+19.08.26 EBEBK BOĞA Cypher
+  giriş 80,65 · stop 73,18 · T1 81,20 · T2 83,80 · T3 88,00
+  sonuç: T1 T T2 T T3 Z · kademeli +1.04%
+20.08.26 PNLSN BOĞA Gartley
+  giriş 45,14 · stop 39,34 · T1 45,36 · T2 47,44 · T3 50,80
+  sonuç: T1 T T2 T T3 S · kademeli -2.72%
+09.09.26 KCAER BOĞA Cypher
+  giriş 14,29 · stop 12,85 · T1 14,73 · T2 15,34 · T3 16,32
+  sonuç: T1 S T2 S T3 S · kademeli -10.41%
+24.09.26 EGGUB BOĞA Bat
+  giriş 99,75 · stop 92,39 · T1 103,03 · T2 107,57 · T3 114,90
+  sonuç: T1 Z T2 Z T3 Z · kademeli +1.05%
+
+=== ŞU AN OLUŞAN / GİRİŞ BEKLEYEN ===
+02.10.26 OFSYM BOĞA Cypher · son fiyat 56,30
+  stop 49,39 · T1 59,07 · T2 62,18 · T3 67,20</pre></body></html>
