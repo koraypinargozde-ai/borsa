@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>OB test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST BOĞA ORDER BLOCK GERİYE TEST
+Dönem: 13.11.2023 - 02.10.2026 · hisse: 510 · işlem: 7196 · medyan risk (giriş-stop) %2.5
+Kural: BOS (swing tepe kırılımı, K=3) + en az %3 yükseliş, OB = son kırmızı mum (alt fitil - açılış). Giriş: ilk geri dönüş (en çok 20 gün). Stop: OB alt fitili.
+Net getiri, %0.3 maliyet dahil. Aynı barda stop+hedef = stop. Rastgele giriş: aynı stop mesafesi.
+gs = giriş günü kapanışı · g3/g5 = 3./5. gün kapanışı (stoplu) · st5 = 5 günde stop %
+1R/2R/3R = hedef riskin 1/2/3 katı, stop altta, en çok 10 gün
+
+grup                             n  st5%     gs     g3     g5     1R     2R     3R
+RASTGELE giriş (taban)      113955    65  -0.42  -0.22  -0.14  -0.29  -0.14  -0.03
+TÜM boğa OB                   7196    63  -0.15  -0.26  -0.18  -0.30  -0.19  -0.09
+FVG var                       2409    62  -0.13  -0.20  -0.11  -0.20  -0.14  -0.12
+FVG yok                       4787    64  -0.16  -0.29  -0.22  -0.34  -0.21  -0.07
+impuls hacmi ≥2x              2569    65  -0.21  -0.27  -0.32  -0.36  -0.28  -0.25
+impuls hacmi &lt;2x              4627    63  -0.11  -0.26  -0.11  -0.26  -0.14  +0.00
+impuls ≥%6                    4402    63  -0.15  -0.34  -0.36  -0.36  -0.26  -0.20
+impuls %3-6                   2794    64  -0.15  -0.15  +0.08  -0.19  -0.07  +0.09
+hızlı dönüş ≤3 gün            3530    60  -0.14  -0.24  -0.11  -0.25  -0.10  +0.05
+geç dönüş 4+ gün              3666    67  -0.16  -0.29  -0.25  -0.34  -0.28  -0.22
+endeks↑ (SMA50 üstü)          5130    64  -0.17  -0.20  -0.11  -0.32  -0.17  +0.01
+endeks↓                       1769    61  -0.13  -0.37  -0.21  -0.21  -0.13  -0.18
+risk ≤%3                      4393    72  -0.19  -0.21  -0.08  -0.35  -0.26  -0.17
+risk &gt;%3                      2803    50  -0.08  -0.34  -0.35  -0.21  -0.07  +0.05
+FVG + hacim 2x+                836    64  -0.18  -0.19  -0.19  -0.33  -0.23  -0.31
+FVG + hacim 2x+ + endeks↑      576    63  -0.22  +0.01  +0.03  -0.30  -0.07  -0.11
+
+=== EĞİTİM (13.11.2023-24.11.2025) / TEST (sonrası): net g3 ve 2R ===
+grup                          n_eğ     g3     2R  n_test     g3     2R
+TÜM boğa OB                   5006  -0.21  -0.11    2190  -0.38  -0.36
+FVG var                       1725  -0.13  -0.02     684  -0.38  -0.45
+FVG yok                       3281  -0.25  -0.16    1506  -0.38  -0.33
+impuls hacmi ≥2x              1718  -0.22  -0.21     851  -0.37  -0.43
+impuls hacmi &lt;2x              3288  -0.21  -0.06    1339  -0.39  -0.33
+impuls ≥%6                    3093  -0.26  -0.12    1309  -0.51  -0.61
+impuls %3-6                   1913  -0.13  -0.10     881  -0.19  +0.00
+hızlı dönüş ≤3 gün            2435  -0.26  -0.12    1095  -0.20  -0.04
+geç dönüş 4+ gün              2571  -0.17  -0.11    1095  -0.56  -0.68
+endeks↑ (SMA50 üstü)          3433  -0.10  -0.04    1697  -0.40  -0.43
+endeks↓                       1290  -0.40  -0.13     479  -0.30  -0.12
+risk ≤%3                      3007  -0.17  -0.25    1386  -0.30  -0.28
+risk &gt;%3                      1999  -0.27  +0.10     804  -0.52  -0.52
+FVG + hacim 2x+                587  -0.30  -0.20     249  +0.07  -0.30
+FVG + hacim 2x+ + endeks↑      382  -0.06  +0.01     194  +0.14  -0.23
+
+Not: OB tanımı kural bazlı bir yorum; elle çizenler farklı seçer. Eğitim ve testte
+birlikte rastgele girişin üstünde çıkan satır yoksa kenar yok demektir.</pre></body></html>
