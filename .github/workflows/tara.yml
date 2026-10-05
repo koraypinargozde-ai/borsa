@@ -25,6 +25,8 @@ jobs:
         continue-on-error: true
       - run: python hacim.py
         continue-on-error: true
+      - run: python yztakip.py
+        continue-on-error: true
       - run: python obvekle.py
         continue-on-error: true
       - run: python harmonikekle.py
