@@ -1,0 +1,112 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Sessiz emilim</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST SESSİZ EMİLİM TESTİ
+Dönem: 26.01.2024 - 08.09.2026 · hisse: 510 · örnek (gün-hisse): 231932
+Şartlar: o gün %7&#x27;den az yükselmiş, son 20 günde tavan yok, ertesi açılış tavan değil.
+Giriş: sinyal ertesi AÇILIŞ · maliyet %0.3 · eğitim/test kesimi: 02.12.2025
+sakin = fiyat yatay (W günde değişim ±%5, aralık ≤%15). hacim = son W gün ort. / önceki 60 gün ort.
+tavan10/20 = 10/20 işlem günü içinde tavan olma oranı · kat = tabana göre
+n10/n20 = 10/20 gün sonra kapanışta net getiri (%) · z10 = 10 günde en yüksek (açılışa göre)
+Uyarı: komşu günler üst üste biner, n görünenden daha az bağımsızdır.
+
+koşul                               n  tav10   kat  tav20    n10    n20    z10
+TÜM (taban)                    231932  11.2%  1.0x  20.4%  +0.41  +0.97   +8.4
+
+=== TEK KOŞULLAR ===
+10g sakin                      103343   9.5%  0.8x  17.7%  +0.34  +0.79   +7.8
+10g sıkı sakin                  40390   8.2%  0.7x  15.5%  +0.56  +1.05   +7.5
+10g hacim ≥1.5x                 23263  12.4%  1.1x  21.5%  +0.09  +0.45   +8.9
+10g hacim ≥2x                    8191  14.4%  1.3x  24.5%  -0.03  +0.43   +9.3
+10g hacim ≥3x                    1630  17.2%  1.5x  29.0%  -0.93  -0.54   +9.5
+10g CMF&gt;0.1                     41029  10.1%  0.9x  18.4%  +0.82  +1.86   +8.7
+10g OBV↑                       127354  11.0%  1.0x  20.2%  +0.45  +1.12   +8.5
+10g alım baskın                 95387  11.1%  1.0x  20.3%  +0.48  +1.21   +8.6
+
+20g sakin                       46627   8.1%  0.7x  15.1%  +0.28  +0.67   +7.4
+20g sıkı sakin                   8062   5.7%  0.5x  11.2%  +0.63  +0.96   +6.9
+20g hacim ≥1.5x                 22376  12.3%  1.1x  21.4%  -0.04  +0.15   +8.9
+20g hacim ≥2x                    7332  13.7%  1.2x  23.5%  -0.09  +0.02   +9.2
+20g hacim ≥3x                    1404  17.2%  1.5x  25.9%  -1.21  -0.75   +9.2
+20g CMF&gt;0.1                     30188  10.0%  0.9x  17.9%  +1.05  +2.06   +8.9
+20g OBV↑                       132480  11.0%  1.0x  20.0%  +0.47  +0.97   +8.6
+20g alım baskın                 89275  11.2%  1.0x  20.0%  +0.63  +1.11   +8.8
+
+bugün 0-5%                     101480  10.8%  1.0x  19.8%  +0.37  +1.10   +8.3
+kapanış ≥60                     71967  10.7%  1.0x  19.6%  +0.44  +1.32   +8.4
+
+=== SESSİZ EMİLİM TANIMLARI (eğitim / test) ===
+ana = sakin + hacim ≥2x + CMF&gt;0.1 + OBV↑ · sıkı = sıkı sakin + hacim ≥3x + CMF + OBV
+10g ANA: n=151 · tavan10 %15.9 (1.4x) · n10 +3.56 · n20 +3.93 · z10 +10.7
+   eğitim n=90 tavan10 %21.1 n10 +4.80 · test n=61 tavan10 %8.2 n10 +1.74
+10g SIKI: örnek yok/az (n=0)
+20g ANA: örnek yok/az (n=17)
+20g SIKI: örnek yok/az (n=0)
+(taban: tavan10 %11.2, tavan20 %20.4, n10 +0.41, n20 +0.97)
+
+=== EN İYİ KOMBİNASYONLAR (10 gün penceresi; eğitim net10&#x27;a göre sıralı) ===
+taban n10: +0.41 · çok kombinasyon denendi, tek başına parlak satıra güvenme
+1) 10g sakin + 10g hacim ≥2x + 10g CMF&gt;0.1
+   eğitim n=119 n10 +3.90 tavan10 %16.0 · test n=66 n10 +1.15 tavan10 %9.1
+2) 10g hacim ≥3x + 10g CMF&gt;0.1 + 10g alım baskın
+   eğitim n=198 n10 +3.14 tavan10 %16.2 · test n=71 n10 +0.48 tavan10 %14.1
+3) 10g hacim ≥3x + 10g CMF&gt;0.1 + 10g OBV↑
+   eğitim n=210 n10 +2.63 tavan10 %15.2 · test n=82 n10 -0.11 tavan10 %13.4
+4) 10g hacim ≥3x + 10g CMF&gt;0.1
+   eğitim n=231 n10 +1.93 tavan10 %15.6 · test n=88 n10 -0.09 tavan10 %17.0
+5) 10g hacim ≥1.5x + 10g hacim ≥3x + 10g CMF&gt;0.1
+   eğitim n=231 n10 +1.93 tavan10 %15.6 · test n=88 n10 -0.09 tavan10 %17.0
+6) 10g hacim ≥2x + 10g hacim ≥3x + 10g CMF&gt;0.1
+   eğitim n=231 n10 +1.93 tavan10 %15.6 · test n=88 n10 -0.09 tavan10 %17.0
+7) 10g hacim ≥3x + 10g alım baskın
+   eğitim n=556 n10 +1.70 tavan10 %16.9 · test n=195 n10 -2.54 tavan10 %16.9
+8) 10g hacim ≥1.5x + 10g hacim ≥3x + 10g alım baskın
+   eğitim n=556 n10 +1.70 tavan10 %16.9 · test n=195 n10 -2.54 tavan10 %16.9
+Eğitim VE testte n10 pozitif olan kombinasyon: 81 / 153
+
+=== EN İYİ KOMBİNASYONLAR (20 gün penceresi; eğitim net10&#x27;a göre sıralı) ===
+taban n10: +0.41 · çok kombinasyon denendi, tek başına parlak satıra güvenme
+1) 20g sıkı sakin + 20g CMF&gt;0.1 + 20g alım baskın
+   eğitim n=118 n10 +1.95 tavan10 %1.7 · test n=72 n10 +0.48 tavan10 %4.2
+2) 20g hacim ≥2x + 20g CMF&gt;0.1 + bugün 0-5%
+   eğitim n=394 n10 +1.61 tavan10 %19.3 · test n=166 n10 +1.56 tavan10 %8.4
+3) 20g hacim ≥2x + 20g CMF&gt;0.1 + 20g OBV↑
+   eğitim n=735 n10 +1.52 tavan10 %16.9 · test n=328 n10 +3.19 tavan10 %10.1
+4) 20g hacim ≥2x + 20g CMF&gt;0.1 + kapanış ≥60
+   eğitim n=335 n10 +1.29 tavan10 %17.3 · test n=168 n10 +3.52 tavan10 %9.5
+5) 20g CMF&gt;0.1 + 20g alım baskın + bugün 0-5%
+   eğitim n=9286 n10 +1.28 tavan10 %10.0 · test n=3673 n10 +0.64 tavan10 %8.5
+6) 20g CMF&gt;0.1 + 20g OBV↑ + bugün 0-5%
+   eğitim n=10404 n10 +1.25 tavan10 %10.0 · test n=4143 n10 +0.76 tavan10 %8.3
+7) 20g CMF&gt;0.1 + bugün 0-5%
+   eğitim n=11279 n10 +1.22 tavan10 %10.0 · test n=4551 n10 +0.85 tavan10 %8.7
+8) 20g CMF&gt;0.1 + 20g alım baskın
+   eğitim n=16485 n10 +1.21 tavan10 %10.4 · test n=6593 n10 +0.63 tavan10 %9.0
+Eğitim VE testte n10 pozitif olan kombinasyon: 69 / 135
+
+=== INFO: TAVANDAN BİR GÜN ÖNCEKİ HALİ ===
+25.10.2023: 10g hacim nanx · 10g değ -5.5% · aralık 22.6% · CMF -0.25 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+24.03.2025: 10g hacim 1.6x · 10g değ -12.6% · aralık 28.9% · CMF -0.16 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+05.06.2025: 10g hacim 2.5x · 10g değ -6.3% · aralık 23.2% · CMF -0.24 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+10.06.2025: 10g hacim 2.1x · 10g değ -1.6% · aralık 19.9% · CMF -0.21 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+13.06.2025: 10g hacim 2.8x · 10g değ +2.9% · aralık 35.6% · CMF -0.21 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+16.06.2025: 10g hacim 2.8x · 10g değ +16.5% · aralık 32.4% · CMF -0.04 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+18.06.2025: 10g hacim 3.6x · 10g değ +36.5% · aralık 40.5% · CMF -0.14 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+24.06.2025: 10g hacim 5.9x · 10g değ +17.5% · aralık 28.4% · CMF -0.18 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+25.06.2025: 10g hacim 5.6x · 10g değ +17.4% · aralık 25.9% · CMF -0.18 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+08.07.2025: 10g hacim 2.6x · 10g değ +6.9% · aralık 23.0% · CMF -0.14 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+11.07.2025: 10g hacim 2.2x · 10g değ +6.7% · aralık 23.2% · CMF -0.27 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+14.10.2025: 10g hacim 1.2x · 10g değ +4.2% · aralık 16.3% · CMF -0.03 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+17.10.2025: 10g hacim 1.5x · 10g değ -1.9% · aralık 20.3% · CMF -0.12 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+20.10.2025: 10g hacim 1.7x · 10g değ +14.0% · aralık 18.4% · CMF +0.12 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+28.10.2025: 10g hacim 2.8x · 10g değ +24.4% · aralık 29.8% · CMF +0.06 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+21.11.2025: 10g hacim 0.8x · 10g değ -11.8% · aralık 23.4% · CMF -0.33 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+08.05.2026: 10g hacim 0.9x · 10g değ +7.2% · aralık 10.5% · CMF -0.13 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+10.06.2026: 10g hacim 0.7x · 10g değ -0.6% · aralık 10.8% · CMF -0.43 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+16.06.2026: 10g hacim 1.1x · 10g değ +3.9% · aralık 14.6% · CMF -0.30 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+17.06.2026: 10g hacim 1.3x · 10g değ +16.8% · aralık 19.6% · CMF +0.03 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+19.06.2026: 10g hacim 2.4x · 10g değ +34.8% · aralık 35.5% · CMF +0.04 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+22.06.2026: 10g hacim 2.6x · 10g değ +51.4% · aralık 35.6% · CMF +0.14 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+23.06.2026: 10g hacim 2.9x · 10g değ +65.0% · aralık 41.4% · CMF +0.38 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+24.06.2026: 10g hacim 2.9x · 10g değ +85.8% · aralık 46.2% · CMF +0.40 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+06.07.2026: 10g hacim 2.1x · 10g değ +33.2% · aralık 40.7% · CMF +0.63 · OBV↑ evet · 10g ana hayır · 20g ana hayır
+04.08.2026: 10g hacim 1.0x · 10g değ +3.0% · aralık 21.5% · CMF -0.06 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+14.09.2026: 10g hacim 1.2x · 10g değ -25.4% · aralık 37.0% · CMF -0.21 · OBV↑ hayır · 10g ana hayır · 20g ana hayır
+30.09.2026: 10g hacim 0.0x · 10g değ -63.3% · aralık 146.2% · CMF +0.00 · OBV↑ hayır · 10g ana hayır · 20g ana hayır</pre></body></html>
