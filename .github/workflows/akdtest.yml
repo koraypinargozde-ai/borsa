@@ -1,0 +1,26 @@
+name: akdtest
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests pandas lxml
+      - run: python akdtest.py
+      - name: Sonucu kaydet
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add docs/akdtest.html
+          git commit -m "akd test sonucu" || echo "degisiklik yok"
+          for i in 1 2 3; do
+            git pull --rebase && git push && break
+            sleep 5
+          done
