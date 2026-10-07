@@ -83,7 +83,7 @@ def main():
     for i in range(0, len(syms), 40):
         grup = syms[i:i + 40]
         try:
-            v = yf.download(grup, period="60d", interval="15m", group_by="ticker",
+            v = yf.download(grup, period="55d", interval="15m", group_by="ticker",
                             progress=False, threads=True, auto_adjust=False)
         except Exception as e:
             print("hata", e)
@@ -104,7 +104,7 @@ def main():
     simdi = datetime.datetime.utcnow() + datetime.timedelta(hours=3)
     json.dump({"d": d, "t": simdi.strftime("%H:%M"), "x": out},
               open(D + "cvd.json", "w"), separators=(",", ":"))
-    print("cvd.json yazildi:", len(out), "hisse,",
+    print("cvd.json yazildi (veri tarihi " + d + "):", len(out), "hisse,",
           sum(x[3] for x in out.values()), "adet para girisi,",
           sum(1 for x in out.values() if x[3] and x[4]), "adet para girisi + yatay")
 
