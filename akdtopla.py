@@ -17,6 +17,7 @@ KURUMLAR = ["İş Yatırım", "TERA", "Bank of America", "BofA", "HSBC", "Yapı 
             "Ziraat", "Ak Yatırım", "Vakıf", "Garanti", "QNB", "Midas", "Deniz",
             "Gedik", "Tacirler", "Halk", "Info", "Fiba", "Marbaş", "Alternatif",
             "Yatırım Finansman", "Oyak", "Pusula", "Şeker"]
+DT = re.compile(r"(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}:\d{2})")
 src = open("scan.py", encoding="utf-8").read()
 TICK = set(re.search(r'T = """(.*?)"""', src, re.S).group(1).split())
 
@@ -30,8 +31,19 @@ def yukle(p, vars_):
         return vars_
 
 
+def duz(txt):
+    p = re.sub(r"(?is)<(script|style).*?</\1>", " ", txt)
+    p = re.sub(r"<[^>]+>", " ", p)
+    return re.sub(r"\s+", " ", H.unescape(p))
+
+
 REC = yukle("docs/akd.json", [])
 SEEN = yukle("docs/akd_seen.json", {})
+# tarihi güvenilmeyen / eski biçimli kayıtları temizle, yeniden çekilsin
+bozuk = {r["u"] for r in REC if r.get("g") != 1 or "w" not in r}
+REC = [r for r in REC if r["u"] not in bozuk]
+for u in bozuk:
+    SEEN.pop(u, None)
 keys = {r["key"] for r in REC}
 
 
@@ -117,14 +129,21 @@ for u in links[:50]:
         SEEN.setdefault(u, NOW.isoformat())
         t = re.search(r"<title>(.*?)</title>", txt, re.S)
         ad = H.unescape(t.group(1)).strip() if t else ""
-        g = re.search(r"Son\s*G[üu]ncelleme(?:\s|:|&nbsp;|<[^>]*>)*"
-                      r"(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}:\d{2})", txt)
-        if g:
-            d = f"{g.group(3)}-{g.group(2)}-{g.group(1)} {g.group(4)}"
-            gk = 1
-        else:
-            d = NOW.strftime("%Y-%m-%d %H:%M")
-            gk = 0
+        plain = duz(txt)
+        d = NOW.strftime("%Y-%m-%d %H:%M")
+        gk = 0
+        govde = plain[:3000]
+        m = DT.search(plain)
+        if m:
+            try:
+                dt = datetime(int(m.group(3)), int(m.group(2)), int(m.group(1)), tzinfo=TR)
+                if timedelta(days=-400) < dt - NOW < timedelta(days=1):
+                    d = f"{m.group(3)}-{m.group(2)}-{m.group(1)} {m.group(4)}"
+                    gk = 1
+                    govde = plain[m.end():m.end() + 1500]
+            except Exception:
+                pass
+        hafta = 1 if "hafta" in (ad + " " + govde).casefold() else 0
         try:
             tb = pd.read_html(StringIO(txt))
         except Exception:
@@ -141,7 +160,7 @@ for u in links[:50]:
             if key in keys:
                 continue
             keys.add(key)
-            REC.append({"key": key, "u": u, "t": ad[:120], "d": d, "g": gk,
+            REC.append({"key": key, "u": u, "t": ad[:120], "d": d, "g": gk, "w": hafta,
                         "tip": tip, "y": yon, "k": kurum if tip == "kurum" else None,
                         "h": hisse if tip == "hisse" else None, "r": rows,
                         "f": NOW.strftime("%Y-%m-%d %H:%M")})
@@ -161,9 +180,12 @@ P = out.append
 P("HİSSE.NET AKD TOPLAMA ÖZETİ")
 P(f"Son çalışma: {NOW:%d.%m.%Y %H:%M} · toplam kayıt: {len(REC)} · bu çalışmada yeni: {yeni}")
 P("kurum tipi = bir kurumun ilk 5 alım/satım hissesi · hisse tipi = bir hissenin ilk 5 alıcı/satıcı kurumu")
+P("Günlük ve haftalık yazılar ayrı sayılır (haftalık = 'hafta' geçen yazılar).")
 P("")
 gun = {}
 for r in REC:
+    if r["w"] == 1:
+        continue
     d = r["d"][:10]
     s = gun.setdefault(d, {"kurum": 0, "hisse": 0, "hs": set(), "bk": {}})
     s[r["tip"]] += 1
@@ -178,12 +200,15 @@ for r in REC:
         s["hs"].add(h)
         for row in r["r"]:
             s["bk"].setdefault(h, set()).add(row[0])
+P("=== GÜNLÜK YAZILAR ===")
 P(f"{'gün':<12}{'kurum':>7}{'hisse':>7}{'farklı hisse(alım)':>20}")
 for d in sorted(gun, reverse=True)[:14]:
     s = gun[d]
     P(f"{d:<12}{s['kurum']:>7}{s['hisse']:>7}{len(s['hs']):>20}")
+if not gun:
+    P("Henüz günlük kayıt yok.")
 P("")
-P("=== SON 3 GÜN: EN ÇOK FARKLI KURUMUN ALIM LİSTESİNDE GEÇEN HİSSELER ===")
+P("=== SON 3 GÜN: EN ÇOK FARKLI KURUMUN ALIM LİSTESİNDE GEÇEN HİSSELER (günlük) ===")
 son = sorted(gun, reverse=True)[:3]
 topl = {}
 for d in son:
@@ -194,9 +219,18 @@ for h, ks in sorted(topl.items(), key=lambda a: -len(a[1]))[:15]:
 if not topl:
     P("Henüz veri yok.")
 P("")
+P("=== HAFTALIK KAYITLAR (son 10) ===")
+hk = [r for r in REC if r["w"] == 1]
+for r in sorted(hk, key=lambda r: r["d"], reverse=True)[:10]:
+    ad = ", ".join(x[0] for x in r["r"])
+    P(f"{r['d'][:10]} · {r['tip']} · {r['y']} · {r['k'] or r['h'] or '?'} · {ad[:60]}")
+if not hk:
+    P("Henüz haftalık kayıt yok.")
+P("")
 P("=== SON 12 KAYIT ===")
 for r in sorted(REC, key=lambda r: r["d"], reverse=True)[:12]:
-    P(f"{r['d']} · {r['tip']} · {r['y']} · {r['k'] or r['h'] or '?'} · {len(r['r'])} satır · {r['t'][:55]}")
+    P(f"{r['d']} · {'H' if r['w'] else 'G'} · {r['tip']} · {r['y']} · "
+      f"{r['k'] or r['h'] or '?'} · {len(r['r'])} satır · {r['t'][:45]}")
 
 text = "\n".join(out)
 print(text)
