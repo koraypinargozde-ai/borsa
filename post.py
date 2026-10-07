@@ -150,7 +150,19 @@ def xu_c():
         return None
 
 
-def bayrak(r, xc):
+def cvd_oku(d):
+    # cvd.py'nin yazdigi goreceli hacim + CVD verisi: {hisse: [rv, cvd orani, son 1 saat, para girisi 1/0]}
+    # Veri tarihi sayfa ile ayni degilse kullanilmaz.
+    try:
+        j = json.load(open(D + "cvd.json"))
+    except Exception:
+        return {}, None
+    if j.get("d") != d:
+        return {}, None
+    return j.get("x", {}), j.get("t")
+
+
+def bayrak(r, xc, cv):
     # P = para girisi, G = GUCLU, E = ERKEN, H = HACIM PATLAMASI, K = KURUMSAL ALIM
     # (sayfadaki rozet kurallariyla ayni)
     t = r[6]
@@ -165,13 +177,14 @@ def bayrak(r, xc):
         k.append("E")
     if r[4] >= 10 and r[5] >= 80 and 0.5 <= r[3] <= 6 and "Tavana" not in t:
         k.append("H")
-    # K: buyuk hacim ama fiyat henuz primlenmemis (0..+3%), guclu kapanis, para girisi, endeksten guclu
-    if r[4] >= 3 and 0 <= r[3] <= 3 and r[5] >= 70 and para and ustun:
+    # K: hacim 2x+, kapanis gucu 35+, goreceli hacim + CVD para girisi (cvd.py)
+    c = cv.get(r[0])
+    if r[4] >= 2 and r[5] >= 35 and c and c[3] == 1:
         k.append("K")
     return k
 
 
-def ilk_gor(rows, d, simdi, xc):
+def ilk_gor(rows, d, simdi, xc, cv):
     # Her hissenin o gun listede ILK gorundugu saat ve fiyat (docs/ilk.json),
     # ayrica her rozetin (P/G/E/H/K) ilk ciktigi an. Veri tarihi bugun degilse yeni kayit yazilmaz.
     F = D + "ilk.json"
@@ -188,7 +201,7 @@ def ilk_gor(rows, d, simdi, xc):
     for r in rows:
         if r[0] not in st["h"]:
             st["h"][r[0]] = {"p": r[2], "s": saat, "c": r[3]}
-        for k in bayrak(r, xc):
+        for k in bayrak(r, xc, cv):
             gk = st["f"].setdefault(k, {})
             if r[0] not in gk:
                 gk[r[0]] = {"p": r[2], "s": saat, "c": r[3], "x": xc, "sc": r[1]}
@@ -306,6 +319,7 @@ button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{o
 <details class="b" id="sonuc"></details>
 <details class="b" id="perf"></details>
 <details class="b" id="kurum"></details>
+<details class="b" id="para"></details>
 <input id="q" type="search" placeholder="Hisse ara (örn. ETILR)" autocomplete="off" aria-label="Hisse ara">
 <div class="chips" id="chips"></div>
 <div class="list"><div class="row head" id="head"></div><div id="rows"></div></div>
@@ -386,7 +400,7 @@ function perf(){
     });
     h+="</table>";
   }
-  return h+"<p>Her sinyal, rozetin o gün ilk çıktığı andaki fiyata göre ölçülür. Adet yanındaki (+n) sonucu henüz belli olmayanlardır. Aynı gün: ilk fiyattan gün sonu kapanışa getiri. Zirve: günün en yüksek fiyatı (sinyalden önceki tepe de olabilir). Tavan: günün en yüksek fiyatı önceki kapanışa göre yaklaşık +%9,8 olduysa sayılır, tahminidir. En iyi: sonraki 3 işgünündeki en yüksek fiyatın ilk fiyata göre artışı. BIST farkı: hissenin getirisi eksi BIST 100 getirisi (üstte 1 gün, altta 3 gün). 💰 grubu ★ ve 🌱 sinyallerini de kapsar; bir hisse gün içinde birden fazla gruba girebilir. 🔥 grubu 💰'dan bağımsızdır: hacim 10x+, kapanış gücü 80+, değişim +0,5 ile +6 arası. 🏦 grubu: hacim 3x+, değişim 0 ile +3 arası, kapanış gücü 70+, 💰 var, endeksten güçlü; gün gün takibi aşağıdaki 🏦 kutusunda. Kayıtlar bu özelliğin açıldığı günden itibaren birikir. Örnek sayısı azken yanıltıcı olabilir.</p>";
+  return h+"<p>Her sinyal, rozetin o gün ilk çıktığı andaki fiyata göre ölçülür. Adet yanındaki (+n) sonucu henüz belli olmayanlardır. Aynı gün: ilk fiyattan gün sonu kapanışa getiri. Zirve: günün en yüksek fiyatı (sinyalden önceki tepe de olabilir). Tavan: günün en yüksek fiyatı önceki kapanışa göre yaklaşık +%9,8 olduysa sayılır, tahminidir. En iyi: sonraki 3 işgünündeki en yüksek fiyatın ilk fiyata göre artışı. BIST farkı: hissenin getirisi eksi BIST 100 getirisi (üstte 1 gün, altta 3 gün). 💰 grubu ★ ve 🌱 sinyallerini de kapsar; bir hisse gün içinde birden fazla gruba girebilir. 🔥 grubu 💰'dan bağımsızdır: hacim 10x+, kapanış gücü 80+, değişim +0,5 ile +6 arası. 🏦 grubu: hacim 2x+, kapanış gücü 35+, para girişi (göreceli hacim + CVD); gün gün takibi aşağıdaki 🏦 kutusunda. Kayıtlar bu özelliğin açıldığı günden itibaren birikir. Örnek sayısı azken yanıltıcı olabilir.</p>";
 }
 function kutu(){
   var K=V.kt||[];
@@ -414,7 +428,19 @@ function kutu(){
     }
   });
   h+="</table>";
-  return h+"<p>1. gün: sinyalin geldiği günün kapanışı, 2. gün: ertesi işgünü kapanışı, böyle devam eder; işgünü geçtikçe dolar. Yüzdeler hissenin ilk görüldüğü fiyata göre. Şimdi: Yahoo'daki son fiyat (gecikmeli). Hisse adına dokununca 10. güne kadar tüm günler açılır. Kural: hacim 3x+, değişim 0 ile +3 arası, kapanış gücü 70+, 💰 para girişi, endeksten güçlü. Bu bir al sinyali değil, izleme grubudur; geçmiş testlerde kenar bulunamadı. Örnek sayısı azken yanıltıcı olabilir.</p>";
+  return h+"<p>1. gün: sinyalin geldiği günün kapanışı, 2. gün: ertesi işgünü kapanışı, böyle devam eder; işgünü geçtikçe dolar. Yüzdeler hissenin ilk görüldüğü fiyata göre. Şimdi: Yahoo'daki son fiyat (gecikmeli). Hisse adına dokununca 10. güne kadar tüm günler açılır. Kural: hacim 2x+, kapanış gücü 35+ ve para girişi (göreceli hacim + CVD, ayrı kutuda). Bu bir al sinyali değil, izleme grubudur; geçmiş testlerde kenar bulunamadı. Örnek sayısı azken yanıltıcı olabilir.</p>";
+}
+function parab(){
+  var C=V.cv||{};
+  var h="<summary>💵 Para girişi: göreceli hacim + CVD</summary>";
+  if(!V.cvt){return h+"<p>Bugün için CVD verisi henüz yok. Her taramada gün içi 15 dakikalık mumlardan hesaplanır.</p>";}
+  var L=D.filter(function(r){return C[r[0]]&&C[r[0]][3]===1}).sort(function(a,b){return C[b[0]][0]-C[a[0]][0]});
+  h="<summary>💵 Para girişi: göreceli hacim + CVD ("+L.length+")</summary>";
+  if(!L.length){return h+"<p>Şu an listedeki hisselerde koşulu sağlayan yok. Son hesaplama: "+V.cvt+"</p>";}
+  h+="<table class=st><tr><th>Hisse</th><th>Göreceli hacim</th><th>CVD oranı</th><th>Son 1 saat</th><th>Değ.%</th></tr>";
+  L.forEach(function(r){var c=C[r[0]];h+="<tr><td>"+r[0]+(kur(r)?" 🏦":"")+"</td><td>"+f1(c[0])+"x</td><td>%"+f1(c[1]*100)+"</td><td>%"+f1(c[2]*100)+"</td><td>"+rt(r[3])+"</td></tr>"});
+  h+="</table>";
+  return h+"<p>Göreceli hacim: bugünün şu ana kadarki hacminin, son 10 günün aynı saate kadarki ortalamasına oranı. CVD oranı: gün içi alıcı-satıcı farkının toplam hacme oranı. Her 15 dakikalık mumda kapanışın mum aralığındaki yerine göre hesaplanan yaklaşık değerdir, gerçek işlem verisi değildir. Koşul: göreceli hacim 1,5x+, CVD oranı %10+ ve son 1 saatte CVD pozitif. Sadece ana listedeki hisseler taranır. Son hesaplama: "+V.cvt+". 🏦 işareti, hacim 2x+ ve kapanış gücü 35+ şartını da sağlayanlarda görünür.</p>";
 }
 function draw(){
   document.getElementById("meta").textContent="Veri tarihi "+V.vt+" · Güncelleme "+V.gt+" · Veri gecikmelidir (Yahoo Finance)";
@@ -459,6 +485,7 @@ document.getElementById("fark").innerHTML=fark();
 document.getElementById("sonuc").innerHTML=sonuc();
 document.getElementById("perf").innerHTML=perf();
 document.getElementById("kurum").innerHTML=kutu();
+document.getElementById("para").innerHTML=parab();
 var XU=null;
 function guclu(r){return r[1]>=70&&r[4]>=3&&r[3]>=3&&r[3]<=8&&(r[6]+"").indexOf("Para")>=0&&(XU==null||r[3]>XU)}
 var draw0=draw;
@@ -479,7 +506,7 @@ var pass1=pass;
 pass=function(r){if(S.f==="hot")return (!S.q||r[0].indexOf(S.q)>=0)&&patla(r);return pass1(r)};
 var draw2=draw;
 draw=function(){draw2();document.querySelectorAll("#rows .item").forEach(function(it){var s=it.querySelector(".sym");if(!s)return;var k=s.textContent.replace(/[^A-Z0-9]/g,"");var r=D.filter(function(z){return z[0]===k})[0];if(!r||!patla(r))return;s.insertAdjacentHTML("beforeend"," <b>🔥</b>");var dt=it.querySelectorAll(".det dt");for(var i=0;i<dt.length;i++){if(dt[i].textContent==="Sinyal"&&dt[i].nextElementSibling){dt[i].nextElementSibling.insertAdjacentHTML("afterbegin","<span class='tag'>PATLAMA</span>")}}})};
-function kur(r){return r[4]>=3&&r[3]>=0&&r[3]<=3&&r[5]>=70&&(r[6]+"").indexOf("Para")>=0&&(XU==null||r[3]>XU)}
+function kur(r){var c=(V.cv||{})[r[0]];return r[4]>=2&&r[5]>=35&&!!c&&c[3]===1}
 F.push(["kur","🏦 Kurumsal"]);
 var pass2=pass;
 pass=function(r){if(S.f==="kur")return (!S.q||r[0].indexOf(S.q)>=0)&&kur(r);return pass2(r)};
@@ -502,7 +529,8 @@ def main():
     kes = bugun_str if kapanis else (simdi - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
     xc = xu_c()
-    ilk, fl = ilk_gor(rows, d, simdi, xc)
+    cv, cvt = cvd_oku(d)
+    ilk, fl = ilk_gor(rows, d, simdi, xc, cv)
 
     G = D + "gecmis.json"
     hist = json.load(open(G)) if os.path.exists(G) else []
@@ -606,6 +634,8 @@ def main():
         "perf": perf,
         "sl": sl,
         "kt": kt,
+        "cv": {r[0]: cv[r[0]] for r in rows if r[0] in cv},
+        "cvt": cvt,
     }
     telegram(rows, d, gt)
     uygulama_dosyalari()
