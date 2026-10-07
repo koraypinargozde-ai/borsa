@@ -16,6 +16,8 @@ jobs:
           python-version: "3.11"
       - run: pip install yfinance pandas
       - run: python scan.py
+      - run: python cvd.py
+        continue-on-error: true
       - run: python post.py
         continue-on-error: true
         env:
