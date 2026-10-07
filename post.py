@@ -150,17 +150,15 @@ def xu_c():
         return None
 
 
-def cvd_oku(d):
+def cvd_oku():
     # cvd.py'nin yazdigi goreceli hacim + CVD verisi:
     # {hisse: [rv, cvd orani, son 1 saat, para girisi 1/0, yatay 1/0, 5g %, 10g aralik %, bugun %]}
-    # Veri tarihi sayfa ile ayni degilse kullanilmaz.
+    # Donus: (veri, hesaplama saati, verinin tarihi YYYY-MM-DD)
     try:
         j = json.load(open(D + "cvd.json"))
     except Exception:
-        return {}, None
-    if j.get("d") != d:
-        return {}, None
-    return j.get("x", {}), j.get("t")
+        return {}, None, None
+    return j.get("x", {}), j.get("t"), j.get("d")
 
 
 def bayrak(r, xc, cv):
@@ -434,14 +432,15 @@ function kutu(){
 function parab(){
   var C=V.cv||{};
   var h="<summary>💵 Para girişi: göreceli hacim + CVD</summary>";
-  if(!V.cvt){return h+"<p>Bugün için CVD verisi henüz yok. Her taramada gün içi 15 dakikalık mumlardan hesaplanır.</p>";}
+  if(!V.cvt){return h+"<p>CVD verisi yok. Her taramada gün içi 15 dakikalık mumlardan hesaplanır.</p>";}
   var L=D.filter(function(r){return C[r[0]]&&C[r[0]][3]===1}).sort(function(a,b){return C[b[0]][0]-C[a[0]][0]});
   h="<summary>💵 Para girişi: göreceli hacim + CVD ("+L.length+")</summary>";
-  if(!L.length){return h+"<p>Şu an listedeki hisselerde koşulu sağlayan yok. Son hesaplama: "+V.cvt+"</p>";}
-  h+="<table class=st><tr><th>Hisse</th><th>Göreceli hacim</th><th>CVD oranı</th><th>Son 1 saat</th><th>Değ.%</th></tr>";
+  var uy=V.cvok?"":"<p><b>Dikkat:</b> bu veri "+V.cvd+" tarihli, sayfanın veri tarihi ("+V.vt+") ile aynı değil. Yeni seans verisi gelene kadar 🏦 işareti ve 🏦 rozeti kapalı.</p>";
+  if(!L.length){return h+uy+"<p>Şu an listedeki hisselerde koşulu sağlayan yok. Son hesaplama: "+V.cvt+" ("+V.cvd+" verisi)</p>";}
+  h+=uy+"<table class=st><tr><th>Hisse</th><th>Göreceli hacim</th><th>CVD oranı</th><th>Son 1 saat</th><th>Değ.%</th></tr>";
   L.forEach(function(r){var c=C[r[0]];h+="<tr><td>"+r[0]+(kur(r)?" 🏦":"")+(c.length>6?"<br><small style='color:var(--mute)'>5g "+sg(c[5])+"% · aralık %"+f1(c[6])+"</small>":"")+"</td><td>"+f1(c[0])+"x</td><td>%"+f1(c[1]*100)+"</td><td>%"+f1(c[2]*100)+"</td><td>"+rt(r[3])+"</td></tr>"});
   h+="</table>";
-  return h+"<p>Göreceli hacim: bugünün şu ana kadarki hacminin, son 20 günün aynı saate kadarki ortalamasına oranı. CVD oranı: gün içi alıcı-satıcı farkının toplam hacme oranı. Her 15 dakikalık mumda kapanışın mum aralığındaki yerine göre hesaplanan yaklaşık değerdir, gerçek işlem verisi değildir. Koşul: göreceli hacim 1,5x+, CVD oranı %10+ ve son 1 saatte CVD pozitif. Sadece ana listedeki hisseler taranır. Son hesaplama: "+V.cvt+". 🏦 işareti, hacim 2x+, kapanış gücü 35+ ve yatay şartlarını da sağlayanlarda görünür. Altındaki yazı: son 5 günlük getiri ve son 10 günlük (bugün hariç) en yüksek-en düşük aralığı.</p>";
+  return h+"<p>Göreceli hacim: bugünün şu ana kadarki hacminin, son 20 günün aynı saate kadarki ortalamasına oranı. CVD oranı: gün içi alıcı-satıcı farkının toplam hacme oranı. Her 15 dakikalık mumda kapanışın mum aralığındaki yerine göre hesaplanan yaklaşık değerdir, gerçek işlem verisi değildir. Koşul: göreceli hacim 1,5x+, CVD oranı %10+ ve son 1 saatte CVD pozitif. Sadece ana listedeki hisseler taranır. Son hesaplama: "+V.cvt+" ("+V.cvd+" verisi). 🏦 işareti, hacim 2x+, kapanış gücü 35+ ve yatay şartlarını da sağlayanlarda görünür. Altındaki yazı: son 5 günlük getiri ve son 10 günlük (bugün hariç) en yüksek-en düşük aralığı.</p>";
 }
 function draw(){
   document.getElementById("meta").textContent="Veri tarihi "+V.vt+" · Güncelleme "+V.gt+" · Veri gecikmelidir (Yahoo Finance)";
@@ -507,7 +506,7 @@ var pass1=pass;
 pass=function(r){if(S.f==="hot")return (!S.q||r[0].indexOf(S.q)>=0)&&patla(r);return pass1(r)};
 var draw2=draw;
 draw=function(){draw2();document.querySelectorAll("#rows .item").forEach(function(it){var s=it.querySelector(".sym");if(!s)return;var k=s.textContent.replace(/[^A-Z0-9]/g,"");var r=D.filter(function(z){return z[0]===k})[0];if(!r||!patla(r))return;s.insertAdjacentHTML("beforeend"," <b>🔥</b>");var dt=it.querySelectorAll(".det dt");for(var i=0;i<dt.length;i++){if(dt[i].textContent==="Sinyal"&&dt[i].nextElementSibling){dt[i].nextElementSibling.insertAdjacentHTML("afterbegin","<span class='tag'>PATLAMA</span>")}}})};
-function kur(r){var c=(V.cv||{})[r[0]];return r[4]>=2&&r[5]>=35&&!!c&&c[3]===1&&c[4]===1}
+function kur(r){var c=(V.cv||{})[r[0]];return !!V.cvok&&r[4]>=2&&r[5]>=35&&!!c&&c[3]===1&&c[4]===1}
 F.push(["kur","🏦 Kurumsal"]);
 var pass2=pass;
 pass=function(r){if(S.f==="kur")return (!S.q||r[0].indexOf(S.q)>=0)&&kur(r);return pass2(r)};
@@ -530,7 +529,10 @@ def main():
     kes = bugun_str if kapanis else (simdi - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
     xc = xu_c()
-    cv, cvt = cvd_oku(d)
+    cvall, cvt, cd = cvd_oku()
+    # K rozeti ve sayfadaki 🏦 isareti sadece CVD verisinin tarihi sayfanin veri tarihiyle ayniysa acik
+    cvok = bool(cd) and cd == d
+    cv = cvall if cvok else {}
     ilk, fl = ilk_gor(rows, d, simdi, xc, cv)
 
     G = D + "gecmis.json"
@@ -635,8 +637,10 @@ def main():
         "perf": perf,
         "sl": sl,
         "kt": kt,
-        "cv": {r[0]: cv[r[0]] for r in rows if r[0] in cv},
+        "cv": {r[0]: cvall[r[0]] for r in rows if r[0] in cvall},
         "cvt": cvt,
+        "cvok": 1 if cvok else 0,
+        "cvd": (cd[8:10] + "." + cd[5:7]) if cd else None,
     }
     telegram(rows, d, gt)
     uygulama_dosyalari()
