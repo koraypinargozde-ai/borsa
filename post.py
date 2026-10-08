@@ -152,7 +152,7 @@ def xu_c():
 
 def cvd_oku():
     # cvd.py'nin yazdigi goreceli hacim + CVD verisi:
-    # {hisse: [rv, cvd orani, son 1 saat, para girisi 1/0, yatay 1/0, 5g %, 10g aralik %, bugun %]}
+    # {hisse: [rv, cvd orani, son 1 saat, para girisi 1/0, DIP 1/0, 5g %, 10g aralik %, bugun %, dipten uzaklik %]}
     # Donus: (veri, hesaplama saati, verinin tarihi YYYY-MM-DD)
     try:
         j = json.load(open(D + "cvd.json"))
@@ -176,7 +176,7 @@ def bayrak(r, xc, cv):
         k.append("E")
     if r[4] >= 10 and r[5] >= 80 and 0.5 <= r[3] <= 6 and "Tavana" not in t:
         k.append("H")
-    # K: hacim 2x+, kapanis gucu 35+, goreceli hacim (20 gun) + CVD para girisi, yatay (cvd.py)
+    # K: hacim 2x+, kapanis gucu 35+, goreceli hacim (20 gun) + CVD para girisi, DIP (cvd.py)
     c = cv.get(r[0])
     if r[4] >= 2 and r[5] >= 35 and c and c[3] == 1 and len(c) > 4 and c[4] == 1:
         k.append("K")
@@ -399,7 +399,7 @@ function perf(){
     });
     h+="</table>";
   }
-  return h+"<p>Her sinyal, rozetin o gün ilk çıktığı andaki fiyata göre ölçülür. Adet yanındaki (+n) sonucu henüz belli olmayanlardır. Aynı gün: ilk fiyattan gün sonu kapanışa getiri. Zirve: günün en yüksek fiyatı (sinyalden önceki tepe de olabilir). Tavan: günün en yüksek fiyatı önceki kapanışa göre yaklaşık +%9,8 olduysa sayılır, tahminidir. En iyi: sonraki 3 işgünündeki en yüksek fiyatın ilk fiyata göre artışı. BIST farkı: hissenin getirisi eksi BIST 100 getirisi (üstte 1 gün, altta 3 gün). 💰 grubu ★ ve 🌱 sinyallerini de kapsar; bir hisse gün içinde birden fazla gruba girebilir. 🔥 grubu 💰'dan bağımsızdır: hacim 10x+, kapanış gücü 80+, değişim +0,5 ile +6 arası. 🏦 grubu: hacim 2x+, kapanış gücü 35+, para girişi (göreceli hacim 20 gün + CVD) ve yatay (son 10 gün dar aralık, bugün -%3..+%2, 5 günde ±%3); gün gün takibi aşağıdaki 🏦 kutusunda. Kayıtlar bu özelliğin açıldığı günden itibaren birikir. Örnek sayısı azken yanıltıcı olabilir.</p>";
+  return h+"<p>Her sinyal, rozetin o gün ilk çıktığı andaki fiyata göre ölçülür. Adet yanındaki (+n) sonucu henüz belli olmayanlardır. Aynı gün: ilk fiyattan gün sonu kapanışa getiri. Zirve: günün en yüksek fiyatı (sinyalden önceki tepe de olabilir). Tavan: günün en yüksek fiyatı önceki kapanışa göre yaklaşık +%9,8 olduysa sayılır, tahminidir. En iyi: sonraki 3 işgünündeki en yüksek fiyatın ilk fiyata göre artışı. BIST farkı: hissenin getirisi eksi BIST 100 getirisi (üstte 1 gün, altta 3 gün). 💰 grubu ★ ve 🌱 sinyallerini de kapsar; bir hisse gün içinde birden fazla gruba girebilir. 🔥 grubu 💰'dan bağımsızdır: hacim 10x+, kapanış gücü 80+, değişim +0,5 ile +6 arası. 🏦 grubu: hacim 2x+, kapanış gücü 35+, para girişi (göreceli hacim 20 gün + CVD) ve dip (fiyat son 20 günün en düşüğünün en fazla %10 üstünde, 5 günde en fazla +%5, bugün -%2..+%2); gün gün takibi aşağıdaki 🏦 kutusunda. Kayıtlar bu özelliğin açıldığı günden itibaren birikir. Örnek sayısı azken yanıltıcı olabilir.</p>";
 }
 function kutu(){
   var K=V.kt||[];
@@ -427,20 +427,34 @@ function kutu(){
     }
   });
   h+="</table>";
-  return h+"<p>1. gün: sinyalin geldiği günün kapanışı, 2. gün: ertesi işgünü kapanışı, böyle devam eder; işgünü geçtikçe dolar. Yüzdeler hissenin ilk görüldüğü fiyata göre. Şimdi: Yahoo'daki son fiyat (gecikmeli). Hisse adına dokununca 10. güne kadar tüm günler açılır. Kural: hacim 2x+, kapanış gücü 35+, para girişi (göreceli hacim 1,5x+ son 20 güne göre + CVD, ayrı kutuda) ve yatay (son 10 günlük aralık en fazla %12, 5 günde en fazla ±%3, bugün -%3 ile +%2). Bu bir al sinyali değil, izleme grubudur; geçmiş testlerde kenar bulunamadı. Örnek sayısı azken yanıltıcı olabilir.</p>";
+  return h+"<p>1. gün: sinyalin geldiği günün kapanışı, 2. gün: ertesi işgünü kapanışı, böyle devam eder; işgünü geçtikçe dolar. Yüzdeler hissenin ilk görüldüğü fiyata göre. Şimdi: Yahoo'daki son fiyat (gecikmeli). Hisse adına dokununca 10. güne kadar tüm günler açılır. Kural: hacim 2x+, kapanış gücü 35+, para girişi (göreceli hacim 1,5x+ son 20 güne göre + CVD, ayrı kutuda) ve dip (fiyat son 20 günün en düşüğünün en fazla %10 üstünde, 5 günde en fazla +%5, bugün -%2 ile +%2). Bu bir al sinyali değil, izleme grubudur; geçmiş testlerde kenar bulunamadı. Örnek sayısı azken yanıltıcı olabilir. Not: dip kuralından önce girmiş kayıtlar (örn. 07.10) eski kuralla girmiştir.</p>";
 }
 function parab(){
   var C=V.cv||{};
   var h="<summary>💵 Para girişi: göreceli hacim + CVD</summary>";
   if(!V.cvt){return h+"<p>CVD verisi yok. Her taramada gün içi 15 dakikalık mumlardan hesaplanır.</p>";}
-  var L=D.filter(function(r){return C[r[0]]&&C[r[0]][3]===1}).sort(function(a,b){return C[b[0]][0]-C[a[0]][0]});
-  h="<summary>💵 Para girişi: göreceli hacim + CVD ("+L.length+")</summary>";
+  var PG=D.filter(function(r){return C[r[0]]&&C[r[0]][3]===1}).sort(function(a,b){return C[b[0]][0]-C[a[0]][0]});
+  var L=PG.filter(function(r){return C[r[0]][4]===1});
+  var M=PG.filter(function(r){return C[r[0]][4]!==1});
+  h="<summary>💵 Para girişi: göreceli hacim + CVD (dipte "+L.length+" · primlenmiş "+M.length+")</summary>";
   var uy=V.cvok?"":"<p><b>Dikkat:</b> bu veri "+V.cvd+" tarihli, sayfanın veri tarihi ("+V.vt+") ile aynı değil. Yeni seans verisi gelene kadar 🏦 işareti ve 🏦 rozeti kapalı.</p>";
-  if(!L.length){return h+uy+"<p>Şu an listedeki hisselerde koşulu sağlayan yok. Son hesaplama: "+V.cvt+" ("+V.cvd+" verisi)</p>";}
-  h+=uy+"<table class=st><tr><th>Hisse</th><th>Göreceli hacim</th><th>CVD oranı</th><th>Son 1 saat</th><th>Değ.%</th></tr>";
-  L.forEach(function(r){var c=C[r[0]];h+="<tr><td>"+r[0]+(kur(r)?" 🏦":"")+(c.length>6?"<br><small style='color:var(--mute)'>5g "+sg(c[5])+"% · aralık %"+f1(c[6])+"</small>":"")+"</td><td>"+f1(c[0])+"x</td><td>%"+f1(c[1]*100)+"</td><td>%"+f1(c[2]*100)+"</td><td>"+rt(r[3])+"</td></tr>"});
+  if(!PG.length){return h+uy+"<p>Şu an listedeki hisselerde koşulu sağlayan yok. Son hesaplama: "+V.cvt+" ("+V.cvd+" verisi)</p>";}
+  function satir(r,pr){
+    var c=C[r[0]];
+    var alt="";
+    if(c.length>6){alt="<br><small style='color:var(--mute)'>5g "+sg(c[5])+"% · aralık %"+f1(c[6])+(c.length>8&&c[8]!=null?" · dipten +%"+f1(c[8]):"")+"</small>";}
+    return "<tr><td>"+r[0]+(kur(r)?" 🏦":"")+(pr?" <span class='tag'>⚠ primlenmiş</span>":"")+alt+"</td><td>"+f1(c[0])+"x</td><td>%"+f1(c[1]*100)+"</td><td>%"+f1(c[2]*100)+"</td><td>"+rt(r[3])+"</td></tr>";
+  }
+  h+=uy;
+  if(!L.length){h+="<p><b>Dipte para girişi veren hisse yok.</b></p>";}
+  h+="<table class=st><tr><th>Hisse</th><th>Göreceli hacim</th><th>CVD oranı</th><th>Son 1 saat</th><th>Değ.%</th></tr>";
+  L.forEach(function(r){h+=satir(r,false)});
+  if(M.length){
+    h+="<tr><td colspan=5 style='text-align:left;color:var(--warn);font-weight:600;padding-top:10px'>⚠ Primlenmiş (dipte değil, izleme dışı)</td></tr>";
+    M.forEach(function(r){h+=satir(r,true)});
+  }
   h+="</table>";
-  return h+"<p>Göreceli hacim: bugünün şu ana kadarki hacminin, son 20 günün aynı saate kadarki ortalamasına oranı. CVD oranı: gün içi alıcı-satıcı farkının toplam hacme oranı. Her 15 dakikalık mumda kapanışın mum aralığındaki yerine göre hesaplanan yaklaşık değerdir, gerçek işlem verisi değildir. Koşul: göreceli hacim 1,5x+, CVD oranı %10+ ve son 1 saatte CVD pozitif. Sadece ana listedeki hisseler taranır. Son hesaplama: "+V.cvt+" ("+V.cvd+" verisi). 🏦 işareti, hacim 2x+, kapanış gücü 35+ ve yatay şartlarını da sağlayanlarda görünür. Altındaki yazı: son 5 günlük getiri ve son 10 günlük (bugün hariç) en yüksek-en düşük aralığı.</p>";
+  return h+"<p>Göreceli hacim: bugünün şu ana kadarki hacminin, son 20 günün aynı saate kadarki ortalamasına oranı. CVD oranı: gün içi alıcı-satıcı farkının toplam hacme oranı. Her 15 dakikalık mumda kapanışın mum aralığındaki yerine göre hesaplanan yaklaşık değerdir, gerçek işlem verisi değildir. Koşul: göreceli hacim 1,5x+, CVD oranı %10+ ve son 1 saatte CVD pozitif. Sadece ana listedeki hisseler taranır. Son hesaplama: "+V.cvt+" ("+V.cvd+" verisi). Dip: fiyat son 20 günün en düşüğünün en fazla %10 üstünde, son 5 günde en fazla +%5 ve bugün -%2 ile +%2 arasında. Bunu sağlamayanlar zaten yükselmiş (primlenmiş) sayılır ve altta ayrı gösterilir. 🏦 işareti, hacim 2x+, kapanış gücü 35+ ve dip şartlarını da sağlayanlarda görünür. Altındaki yazı: son 5 günlük getiri, son 10 günlük (bugün hariç) en yüksek-en düşük aralığı ve 20 günün dibine uzaklık.</p>";
 }
 function draw(){
   document.getElementById("meta").textContent="Veri tarihi "+V.vt+" · Güncelleme "+V.gt+" · Veri gecikmelidir (Yahoo Finance)";
