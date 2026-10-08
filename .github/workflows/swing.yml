@@ -1,0 +1,23 @@
+name: swing
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install yfinance pandas numpy
+      - run: python swing.py
+      - name: Kaydet
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add docs/swing.html docs/swing.json
+          git commit -m "swing testi" || echo "degisiklik yok"
+          for i in 1 2 3; do git pull --rebase && git push && break || sleep 5; done
