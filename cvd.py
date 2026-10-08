@@ -6,10 +6,10 @@ import yfinance as yf
 D = "docs/"
 RV_ESIK = 1.5      # goreceli hacim (son 20 gunun ayni saate kadarki ortalamasina gore) en az
 CR_ESIK = 0.10     # CVD orani en az (net alim / toplam hacim)
-DEG_ALT = -3.0     # bugunku degisim alt siniri (%)
+DEG_ALT = -2.0     # bugunku degisim alt siniri (%)
 DEG_UST = 2.0      # bugunku degisim ust siniri (%)
-G5_MAX = 3.0       # son 5 gunde mutlak getiri en fazla (%)
-AR_MAX = 12.0      # son 10 gun (bugun haric) en yuksek-en dusuk araligi, ortalama fiyata gore (%)
+G5_MAX = 5.0       # son 5 gun getirisi en fazla (%), yukari sinir
+DIP_MAX = 10.0     # fiyat son 20 gunun en dusugunun en fazla bu kadar ustunde (%)
 
 
 def tickers():
@@ -57,7 +57,7 @@ def hesapla(df):
     c4 = float(delta[-4:].sum()) / v4 if v4 > 0 else 0.0
     p = 1 if (rv >= RV_ESIK and cr >= CR_ESIK and c4 > 0) else 0
 
-    # yataylik: gunluk kapanislar ve son 10 gunluk aralik
+    # dip: gunluk kapanislar, 5g getiri, 20 gunluk dibe uzaklik
     kap = df["Close"].groupby(gun).last().values.astype(float)
     if len(kap) < 11 or kap[-2] <= 0 or kap[-6] <= 0:
         return None
@@ -68,9 +68,18 @@ def hesapla(df):
     if len(d10) == 0 or ortf <= 0:
         return None
     ar = (float(d10["High"].max()) - float(d10["Low"].min())) / ortf * 100
-    y = 1 if (DEG_ALT <= deg <= DEG_UST and abs(g5) <= G5_MAX and ar <= AR_MAX) else 0
+    # son 20 gunun (bugun dahil) en dusugu
+    d20 = df[gun.isin(gunler[-20:])]
+    dip = None
+    if len(gunler) >= 20 and len(d20) > 0:
+        l20 = float(d20["Low"].min())
+        if l20 > 0:
+            dip = (kap[-1] / l20 - 1) * 100
+    y = 1 if (dip is not None and dip <= DIP_MAX and g5 <= G5_MAX
+              and DEG_ALT <= deg <= DEG_UST) else 0
     return bugun, [round(rv, 2), round(cr, 3), round(c4, 3), p, y,
-                   round(g5, 1), round(ar, 1), round(deg, 1)]
+                   round(g5, 1), round(ar, 1), round(deg, 1),
+                   (round(dip, 1) if dip is not None else None)]
 
 
 def main():
@@ -106,7 +115,7 @@ def main():
               open(D + "cvd.json", "w"), separators=(",", ":"))
     print("cvd.json yazildi (veri tarihi " + d + "):", len(out), "hisse,",
           sum(x[3] for x in out.values()), "adet para girisi,",
-          sum(1 for x in out.values() if x[3] and x[4]), "adet para girisi + yatay")
+          sum(1 for x in out.values() if x[3] and x[4]), "adet para girisi + dip")
 
 
 main()
