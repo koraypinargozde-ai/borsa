@@ -1,4 +1,4 @@
-# swing.py - gevşek kurallı swing testi (price action + destek/direnç + trend + hacim + volatilite + piyasa yönü + pozisyon kuralı)
+# swing.py v2 - sade kırılım testi (destek dönüşü ve piyasa filtresi çıkarıldı, günlük en fazla 5 sinyal)
 import os, re, ast, json, time, datetime as dt
 import numpy as np
 import pandas as pd
@@ -9,6 +9,7 @@ COOL = 10         # aynı hissede sinyaller arası bekleme
 PERIOD = "3y"
 TARGET_R = 2.0    # hedef = 2R
 MIN_TL = 500000   # günlük ort. işlem hacmi alt sınırı (TL)
+CAP = 5           # günlük en fazla sinyal (RS sırasına göre)
 OUT = "docs/swing.html"
 
 
@@ -122,10 +123,9 @@ def build(data, idx):
         F["atrp"] = F["atr"] / F["C"] * 100
         F["stop"] = np.maximum(F["ll10"] * 0.995, F["C"] - 3 * F["atr"])
         F["riskp"] = (F["C"] - F["stop"]) / F["C"] * 100
-        # giriş türleri (gevşek)
         F["kirb"] = (F["C"] > F["hh20"]) & (F["C"] <= F["hh20"] * 1.08)                       # direnç kırılımı
         F["gerib"] = (F["C"] > F["sma50"]) & (F["L"] <= F["sma20"] + 0.5 * F["atr"]) & \
-                     (F["C"] >= F["sma20"] * 0.99) & (F["C"] > F["O"])                          # destek dönüşü
+                     (F["C"] >= F["sma20"] * 0.99) & (F["C"] > F["O"])                          # destek dönüşü (sadece karşılaştırma)
         F["volk"] = F["rv"] >= 1.2
         F["volg"] = F["rv"] >= 0.8
         F["trend"] = (F["C"] > F["sma50"]) & (F["ll10"] >= F["llp"] * 0.97)                     # yükselen dip (gevşek)
@@ -137,15 +137,13 @@ def build(data, idx):
     return store, bool(idx_ok.iloc[-1]), idx.index[-1]
 
 
-def mask(F, market=True, rs=True, trend=True, vol=True, volat=True, kind="both", mkt_invert=False):
+def mask(F, market=False, rs=True, trend=True, vol=True, volat=True, kind="kir"):
     kir = F["kirb"] & (F["volk"] if vol else True)
     ger = F["gerib"] & (F["volg"] if vol else True)
     e = kir if kind == "kir" else ger if kind == "ger" else (kir | ger)
     m = e & F["liq"]
     if market:
         m = m & F["piyasa"]
-    if mkt_invert:
-        m = m & (~F["piyasa"])
     if rs:
         m = m & F["rs"]
     if trend:
@@ -205,22 +203,33 @@ def sim(A, i):
     return dict(ret=(x / e - 1) * 100 - COST, R=(x - e) / risk, why=why, hold=j - i, g10=g10)
 
 
-def run_group(store, fn, rnd=False):
-    rows = []
+def run_group(store, fn, rnd=False, cap=0):
     rng = np.random.default_rng(7)
+    cands = []
     for t, (F, A) in store.items():
         if rnd:
             ok = (F["liq"] & F["stop"].notna() & F["atr"].notna() & F["sma50"].notna()).to_numpy(dtype=bool)
-            ids = np.flatnonzero(ok & (rng.random(len(F)) < 0.04))
-            ids = [int(i) for i in ids]
+            ids = [int(i) for i in np.flatnonzero(ok & (rng.random(len(F)) < 0.04))]
         else:
             ids = pick(fn(F))
+        rs = F["rsr"].to_numpy(dtype=float)
         for i in ids:
-            r = sim(A, i)
-            if r:
-                r["date"] = F.index[i]
-                r["t"] = t
-                rows.append(r)
+            cands.append((F.index[i], t, i, rs[i] if np.isfinite(rs[i]) else 0.0))
+    if cap and not rnd:
+        by = {}
+        for c in cands:
+            by.setdefault(c[0], []).append(c)
+        cands = []
+        for d, lst in by.items():
+            lst.sort(key=lambda x: -x[3])
+            cands += lst[:cap]
+    rows = []
+    for d, t, i, _ in cands:
+        r = sim(store[t][1], i)
+        if r:
+            r["date"] = d
+            r["t"] = t
+            rows.append(r)
     return pd.DataFrame(rows)
 
 
@@ -229,7 +238,11 @@ def summ(df, cut):
         return None
     tr, te = df[df["date"] < cut], df[df["date"] >= cut]
     m = lambda x: float(x["ret"].mean()) if len(x) else float("nan")
-    return dict(n=len(df), ort=float(df["ret"].mean()), med=float(df["ret"].median()),
+    dm = df.groupby("date")["ret"].mean()
+    nd = len(dm)
+    sd = dm.std()
+    tval = float(dm.mean() / (sd / np.sqrt(nd))) if nd > 2 and sd and sd > 0 else float("nan")
+    return dict(n=len(df), nd=nd, tval=tval, ort=float(df["ret"].mean()), med=float(df["ret"].median()),
                 win=float((df["ret"] > 0).mean() * 100), R=float(df["R"].mean()),
                 stop=float((df["why"] == "stop").mean() * 100), hed=float((df["why"] == "hedef").mean() * 100),
                 hold=float(df["hold"].mean()), g10=float(df["g10"].mean()),
@@ -260,19 +273,18 @@ def main():
     print("hisse:", len(store), "kesim tarihi:", cut.date())
 
     groups = [
-        ("TÜMÜ (gevşek kurallar)", lambda F: mask(F)),
-        ("Piyasa filtresi kapalı", lambda F: mask(F, market=False)),
-        ("Piyasa düşüşte (BIST100 < SMA50)", lambda F: mask(F, market=False, mkt_invert=True)),
-        ("RS (göreceli güç) kapalı", lambda F: mask(F, rs=False)),
-        ("Trend yapısı kapalı", lambda F: mask(F, trend=False)),
-        ("Hacim şartı kapalı", lambda F: mask(F, vol=False)),
-        ("Volatilite filtresi kapalı", lambda F: mask(F, volat=False)),
-        ("Sadece direnç kırılımı", lambda F: mask(F, kind="kir")),
-        ("Sadece destek dönüşü", lambda F: mask(F, kind="ger")),
+        ("SADE KIRILIM (günlük en fazla %d)" % CAP, lambda F: mask(F), CAP),
+        ("Günlük sınır yok", lambda F: mask(F), 0),
+        ("RS eşiği kapalı (sıralama yine RS)", lambda F: mask(F, rs=False), CAP),
+        ("Trend yapısı kapalı", lambda F: mask(F, trend=False), CAP),
+        ("Hacim şartı kapalı", lambda F: mask(F, vol=False), CAP),
+        ("Volatilite filtresi kapalı", lambda F: mask(F, volat=False), CAP),
+        ("Piyasa filtresi AÇIK (BIST100 ≥ SMA50)", lambda F: mask(F, market=True), CAP),
+        ("ESKİ kurallar (kırılım+destek+piyasa, sınırsız)", lambda F: mask(F, market=True, kind="both"), 0),
     ]
     res = []
-    for name, fn in groups:
-        df = run_group(store, fn)
+    for name, fn, cap in groups:
+        df = run_group(store, fn, cap=cap)
         s = summ(df, cut)
         print(name, "->", None if s is None else (s["n"], round(s["ort"], 2), round(s["tr"], 2), round(s["te"], 2)))
         res.append((name, s))
@@ -283,15 +295,16 @@ def main():
     rows = ""
     for name, s in res:
         if s is None:
-            rows += f"<tr><td class='l'>{name}</td><td colspan='12'>sinyal yok</td></tr>"
+            rows += f"<tr><td class='l'>{name}</td><td colspan='15'>sinyal yok</td></tr>"
             continue
         flag = " ✅" if (s["tr"] > 0 and s["te"] > 0 and s["n"] >= 30) else ""
-        rows += (f"<tr><td class='l'>{name}{flag}</td><td>{s['n']}</td>" + cell(s["ort"]) + cell(s["med"]) +
-                 cell(s["win"], 0, False, False) + cell(s["R"]) + cell(s["stop"], 0, False, False) +
-                 cell(s["hed"], 0, False, False) + cell(s["hold"], 1, False, False) + cell(s["g10"]) +
+        rows += (f"<tr><td class='l'>{name}{flag}</td><td>{s['n']}</td><td>{s['nd']}</td>" + cell(s["ort"]) +
+                 cell(s["tval"], 1) + cell(s["med"]) + cell(s["win"], 0, False, False) + cell(s["R"]) +
+                 cell(s["stop"], 0, False, False) + cell(s["hed"], 0, False, False) +
+                 cell(s["hold"], 1, False, False) + cell(s["g10"]) +
                  cell(s["tr"]) + f"<td>{s['ntr']}</td>" + cell(s["te"]) + f"<td>{s['nte']}</td></tr>")
 
-    # güncel adaylar (son bar, tüm filtreler açık; giriş ertesi gün açılış)
+    # güncel adaylar (son bar; giriş ertesi gün açılış)
     cands = []
     for t, (F, A) in store.items():
         if F.index[-1] != last_date:
@@ -299,46 +312,46 @@ def main():
         if not mask(F)[-1]:
             continue
         r = F.iloc[-1]
-        kir = bool(r["kirb"] and r["volk"])
         stp = float(r["stop"])
         c = float(r["C"])
-        cands.append(dict(t=t.replace(".IS", ""), tip="Kırılım" if kir else "Destek dönüşü", c=c, stop=stp,
+        cands.append(dict(t=t.replace(".IS", ""), tip="Kırılım", c=c, dirag=float(r["hh20"]), stop=stp,
                           hedef=c + TARGET_R * (c - stp), risk=float(r["riskp"]), rs=float(r["rsr"]),
                           rv=float(r["rv"]), atr=float(r["atrp"])))
     cands.sort(key=lambda x: -x["rs"])
     crow = ""
-    for x in cands[:30]:
-        crow += (f"<tr><td class='l'>{x['t']}</td><td>{x['tip']}</td><td>{x['c']:.2f}</td><td>{x['stop']:.2f}</td>"
+    for k, x in enumerate(cands[:10]):
+        star = "★ " if k < CAP else ""
+        crow += (f"<tr><td class='l'>{star}{x['t']}</td><td>{x['c']:.2f}</td><td>{x['dirag']:.2f}</td><td>{x['stop']:.2f}</td>"
                  f"<td>{x['hedef']:.2f}</td><td>{x['risk']:.1f}</td><td>{x['rs']*100:.0f}</td><td>{x['rv']:.1f}x</td></tr>")
     if not crow:
         crow = "<tr><td colspan='8'>Şu an tüm kuralları sağlayan aday yok</td></tr>"
-    mk = "AÇIK (BIST 100 ortalamasının üstünde)" if mkt_now else "KAPALI (BIST 100 SMA50 altında, alım sinyali verilmez)"
+    mk = "BIST 100 SMA50 üstünde" if mkt_now else "BIST 100 SMA50 altında"
 
     html = f"""<!doctype html><html lang="tr"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Swing testi</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Swing testi v2</title>
 <style>body{{font-family:system-ui,sans-serif;background:#0f1419;color:#e6e6e6;margin:0;padding:12px}}
 h1{{font-size:18px}}h2{{font-size:15px;margin-top:22px}}.w{{overflow-x:auto}}
 table{{border-collapse:collapse;font-size:12px;white-space:nowrap}}th,td{{padding:5px 7px;border-bottom:1px solid #2a323c;text-align:right}}
 th{{background:#1a222c;position:sticky;top:0}}td.l,th.l{{text-align:left}}.g{{color:#4ade80}}.r{{color:#f87171}}
 .n{{font-size:12px;color:#9aa5b1;line-height:1.5}}</style></head><body>
-<h1>Swing testi (gevşek kurallar)</h1>
+<h1>Swing testi v2 (sade kırılım)</h1>
 <p class="n">Hisse: {len(store)} · Dönem: {PERIOD} · Eğitim/test kesimi: {cut.date()} (%60/%40) · Giriş: sinyalden sonraki gün açılış · Maliyet %{COST} ·
-Çıkış: stop (swing dip / 3 ATR), hedef {TARGET_R:g}R, SMA50 altı kapanış (trend bozuldu) veya {MAXH} gün · Stop önce sayılır · Aynı hissede {COOL} gün bekleme.<br>
-Kurallar: direnç kırılımı (20g zirve + hacim 1,2x) VEYA SMA20 desteğine dönüş (yeşil mum, hacim 0,8x) · yükselen dip + SMA50 üstü · RS üst %40 · BIST 100 SMA50'nin %2 yakınında/üstünde · ATR %1-8.
-✅ = eğitim ve testte birlikte pozitif (n≥30).</p>
-<div class="w"><table><tr><th class="l">Grup</th><th>n</th><th>Ort net %</th><th>Medyan</th><th>Kazanç %</th><th>Ort R</th><th>Stop %</th><th>Hedef %</th><th>Gün</th><th>10g net</th><th>Eğitim</th><th>n</th><th>Test</th><th>n</th></tr>
+Çıkış: stop (swing dip / 3 ATR), hedef {TARGET_R:g}R, SMA50 altı kapanış veya {MAXH} gün · Stop önce sayılır · Aynı hissede {COOL} gün bekleme · Günde en fazla {CAP} sinyal (RS sırasına göre).<br>
+Kural: 20 günlük zirvenin kırılması + hacim 1,2x · yükselen dip + SMA50 üstü · RS üst %40 · ATR %1-8. Piyasa filtresi ve destek dönüşü çıkarıldı.<br>
+"Sinyal günü" = sinyal olan farklı gün sayısı, "t" = günlük ortalamalar üzerinden t-değeri (2 üstü anlamlıya yakın). ✅ = eğitim ve testte birlikte pozitif (n≥30).</p>
+<div class="w"><table><tr><th class="l">Grup</th><th>n</th><th>Sinyal günü</th><th>Ort net %</th><th>t</th><th>Medyan</th><th>Kazanç %</th><th>Ort R</th><th>Stop %</th><th>Hedef %</th><th>Gün</th><th>10g net</th><th>Eğitim</th><th>n</th><th>Test</th><th>n</th></tr>
 {rows}</table></div>
 <h2>Güncel adaylar ({last_date.date()} kapanışı)</h2>
-<p class="n">Piyasa filtresi: {mk}. Giriş ertesi gün açılış; stop/hedef kapanışa göre yaklaşıktır. Test sonucu pozitif çıkmadan işlem sinyali değildir.</p>
-<div class="w"><table><tr><th class="l">Hisse</th><th>Tür</th><th>Kapanış</th><th>Stop</th><th>Hedef</th><th>Risk %</th><th>RS</th><th>Hacim</th></tr>
+<p class="n">Piyasa durumu (filtre değil, sadece bilgi): {mk}. ★ = günlük 5 sınırı içinde (RS sırası). Giriş ertesi gün açılış; stop/hedef kapanışa göre yaklaşıktır. Test sonucu zayıfsa işlem sinyali değildir.</p>
+<div class="w"><table><tr><th class="l">Hisse</th><th>Kapanış</th><th>Kırılan direnç</th><th>Stop</th><th>Hedef</th><th>Risk %</th><th>RS</th><th>Hacim</th></tr>
 {crow}</table></div>
-<p class="n">Oluşturma: {dt.datetime.utcnow().strftime('%d.%m.%Y %H:%M')} UTC · Uyarı: güncel hisse listesi (hayatta kalma yanlılığı), örnekler üst üste binebilir.</p>
+<p class="n">Oluşturma: {dt.datetime.utcnow().strftime('%d.%m.%Y %H:%M')} UTC · Uyarı: güncel hisse listesi (hayatta kalma yanlılığı), tutma süreleri üst üste bindiği için t-değeri iyimser olabilir.</p>
 </body></html>"""
     os.makedirs("docs", exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(html)
     with open("docs/swing.json", "w", encoding="utf-8") as f:
-        json.dump(dict(tarih=str(last_date.date()), piyasa=mkt_now, adaylar=cands[:30]), f, ensure_ascii=False)
+        json.dump(dict(tarih=str(last_date.date()), piyasa=mkt_now, adaylar=cands[:10]), f, ensure_ascii=False)
     print("yazildi:", OUT)
 
 
