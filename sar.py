@@ -10,7 +10,8 @@ LIQ = 2_000_000
 AYAR = [(0.005, 0.05), (0.01, 0.1), (0.02, 0.2)]
 NN = [8, 10, 12]
 TOLS = [0.02, 0.03, 0.04]
-CANLI = (0.005, 0.05, 10, 0.03)
+CANLI = (0.02, 0.2, 12, 0.03)
+KURAL = "klasik_12_3"
 GERI = 45       # kutuya eklenecek geçmiş (takvim günü)
 GTOP = 15       # günde en çok sinyal
 ARA = 30
@@ -268,6 +269,8 @@ Yeşil satır: 5 ve 10 günde hem eğitim hem testte ortalama net getiri pozitif
         veri = json.load(open(D + "sar.json", encoding="utf-8"))
     except Exception:
         veri = {}
+    if veri.get("kural") != KURAL:
+        veri = {"kural": KURAL}      # kural değişti: eski kayıtlar silinir
     rows = veri.get("rows", [])
     veri["a"] = {"adim": CANLI[0], "maks": CANLI[1], "ip_gun": CANLI[2], "tol": round(CANLI[3] * 100, 1)}
     gun = {}
