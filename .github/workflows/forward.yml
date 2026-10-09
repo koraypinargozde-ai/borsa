@@ -1,0 +1,28 @@
+name: forward
+on:
+  schedule:
+    - cron: "30 15 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: forward
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install yfinance pandas numpy
+      - run: python forward.py
+      - name: Kaydet
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add docs/forward.html docs/forward.json
+          git commit -m "ileri test" || echo "degisiklik yok"
+          for i in 1 2 3; do git pull --rebase && git push && break || sleep 5; done
