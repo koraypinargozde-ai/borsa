@@ -10,10 +10,11 @@ LIQ = 2_000_000
 MAXG = 20       # gün gün takip (işlem günü)
 SAKLA = 90      # kayıtlar kaç takvim günü tutulur
 
-ST = 0.005      # SAR başlangıç/adım ivmesi (çok yavaş)
-MX = 0.05       # SAR maksimum ivme
-N = 10          # ip en az kaç mum
+ST = 0.02       # SAR başlangıç/adım ivmesi (klasik)
+MX = 0.2        # SAR maksimum ivme
+N = 12          # ip en az kaç mum
 TOL = 0.03      # ip bandı: (en yüksek - en düşük SAR) / ortalama <= %3
+KURAL = "klasik_12_3"
 
 KUTU = '<div id="saripip" style="margin:12px;padding:10px;border:1px solid rgba(128,128,128,.3);border-radius:10px;font-size:13px"></div>'
 
@@ -26,7 +27,7 @@ function dm(s){return s?s.slice(8)+"."+s.slice(5,7):""}
 function p(x){return x==null?"-":String(x).replace(".",",")}
 fetch("sar.json?v="+Date.now()).then(function(r){return r.json()}).then(function(j){
 var R=j.rows||[];var A=j.a||{};
-var h='<b>🪢 SAR ip kırılımı takibi ('+R.length+')</b><div style="opacity:.7;font-size:11px;margin:2px 0 6px">Kural: Parabolic SAR noktaları '+(A.ip_gun||10)+' mum fiyatın üstünde yatay (ip, bant en fazla %'+p(A.tol)+') ve fiyat ipin üstünde kapanıp SAR yukarı döndü. Giriş: sinyalin ertesi günü açılış. Gün sütunları kapanış getirisi (maliyet hariç). Satıra dokun: 20 güne kadar gün gün.</div>';
+var h='<b>🪢 SAR ip kırılımı takibi ('+R.length+')</b><div style="opacity:.7;font-size:11px;margin:2px 0 6px">Kural: klasik Parabolic SAR ('+p(A.adim)+' / '+p(A.maks)+'), noktalar '+(A.ip_gun||12)+' mum fiyatın üstünde yatay (ip, bant en fazla %'+p(A.tol)+') ve fiyat ipin üstünde kapanıp SAR yukarı döndü. 🔥 = hacim 2x+ (testte en iyi grup). Giriş: sinyalin ertesi günü açılış. Gün sütunları kapanış getirisi (maliyet hariç). Satıra dokun: 20 güne kadar gün gün.</div>';
 if(!R.length){B.innerHTML=h+"Henüz kayıt yok";return}
 var ok=R.filter(function(r){return r.nc!=null});
 if(ok.length){
@@ -39,7 +40,7 @@ R.forEach(function(r){
 var g=r.g||[];
 function G(i){return g.length>i?g[i]:null}
 var gir=r.e!=null?p(r.e):'<span style="opacity:.7">bekliyor</span>';
-h+='<tr class="gr" style="text-align:right;border-top:1px solid rgba(128,128,128,.2);cursor:pointer"><td style="text-align:left"><b>'+r.s+'</b><br><span style="opacity:.7">'+dm(r.d)+'</span></td><td>'+gir+'</td>';
+h+='<tr class="gr" style="text-align:right;border-top:1px solid rgba(128,128,128,.2);cursor:pointer"><td style="text-align:left"><b>'+r.s+(r.hv>=2?' 🔥':'')+'</b><br><span style="opacity:.7">'+dm(r.d)+'</span></td><td>'+gir+'</td>';
 [0,1,2,4,9].forEach(function(i){h+='<td style="'+c(G(i))+'">'+f(G(i))+'</td>'});
 h+='<td style="'+c(r.nc)+'">'+f(r.nc)+'<br><span style="opacity:.7">'+p(r.n)+'</span></td></tr>';
 var d='';
@@ -141,6 +142,8 @@ def main():
     T = list(dict.fromkeys(re.search(r'T = """(.*?)"""', src, re.S).group(1).split()))
 
     veri = oku("sar.json", {})
+    if veri.get("kural") != KURAL:
+        veri = {"kural": KURAL}      # kural değişti: eski kayıtlar silinir
     rows = veri.get("rows", [])
     son = veri.get("son")
     veri["a"] = {"adim": ST, "maks": MX, "ip_gun": N, "tol": round(TOL * 100, 1)}
