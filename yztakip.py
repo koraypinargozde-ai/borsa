@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 from datetime import date, timedelta
 import yfinance as yf
 
@@ -33,10 +35,35 @@ def oku(p, v):
         return v
 
 
+def yz_oku():
+    # dosya hiç yoksa: ilk çalışma, boş liste ile başla
+    yol = D + "yz.json"
+    if not os.path.exists(yol):
+        return []
+    # dosya var ama okunamıyorsa: DURMA, üzerine yazma
+    try:
+        j = json.load(open(yol, encoding="utf-8"))
+        rows = j["rows"]
+        if not isinstance(rows, list):
+            raise ValueError("rows liste degil")
+        return rows
+    except Exception as e:
+        raise SystemExit("yz.json okunamadi, uzerine yazilmadi: " + str(e))
+
+
 def main():
     hac = oku("hacim.json", {})
     yz = [s for s, x in hac.items() if x[1]]
-    rows = oku("yz.json", {"rows": []}).get("rows", [])
+    rows = yz_oku()
+    onceki = len(rows)
+
+    # okunan sağlam dosyanın yedeği
+    if onceki:
+        try:
+            shutil.copyfile(D + "yz.json", D + "yz_yedek.json")
+        except Exception as e:
+            print("yedek alinamadi", e)
+
     tum = sorted(set(yz) | {r["s"] for r in rows})
     d = None
     if tum:
@@ -91,8 +118,16 @@ def main():
         r["nc"] = round((n / p - 1) * 100, 1)
 
     rows.sort(key=lambda r: r["d"], reverse=True)
-    json.dump({"rows": rows}, open(D + "yz.json", "w", encoding="utf-8"),
+
+    # kayıt sayısı azalmışsa yazma
+    if len(rows) < onceki:
+        raise SystemExit("kayit sayisi azaldi, yazilmadi")
+
+    # önce geçici dosyaya yaz, sonra değiştir
+    tmp = D + "yz.json.tmp"
+    json.dump({"rows": rows}, open(tmp, "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
+    os.replace(tmp, D + "yz.json")
 
     h = open(D + "index.html", encoding="utf-8").read()
     if 'id="yztakip"' not in h:
