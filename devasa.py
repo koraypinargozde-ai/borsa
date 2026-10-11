@@ -4,11 +4,30 @@ warnings.filterwarnings("ignore")
 H = 63  # ~3 ay
 ESIK = 1.0  # +%100
 
+BAD = {"TRY","USD","EUR","NONE","TRUE","FALSE","XU100","XU030","UTF","BIST","JSON",
+       "HTML","HTTP","HTTPS","CSV","UTC","ATR","EMA","SMA","RSI","OBV","CMF","VWAP",
+       "CVD","CSS","NAN","INF","YES","NOT","AND","FOR","DEF","TL","IS","PERIOD",
+       "OPEN","HIGH","LOW","CLOSE","VOLUME","DATE","INDEX","TIME","UTF8"}
+
+def clean(s):
+    return sorted(x for x in s if x not in BAD and not x.isdigit())
+
 def tickers():
     src = open("scan.py", encoding="utf-8").read()
-    t = set(re.findall(r'["\']([A-Z0-9]{3,6})(?:\.IS)?["\']', src))
-    bad = {"TRY","USD","EUR","NONE","TRUE","FALSE","XU100","XU030","UTF"}
-    return sorted(x for x in t if x not in bad)
+    print("scan.py boyut", len(src))
+    for l in [l for l in src.splitlines() if "ASELS" in l or "THYAO" in l][:3]:
+        print("ornek satir:", l.strip()[:200])
+    t1 = clean(set(re.findall(r'\b([A-Z][A-Z0-9]{2,5})\.IS\b', src)))
+    print("yontem1 (.IS)", len(t1))
+    if len(t1) >= 100:
+        return t1
+    t2 = clean(set(re.findall(r'["\']([A-Z][A-Z0-9]{2,5})(?:\.IS)?["\']', src)))
+    print("yontem2 (tirnakli)", len(t2))
+    if len(t2) >= 100:
+        return t2
+    t3 = clean(set(re.findall(r'\b([A-Z][A-Z0-9]{2,5})\b', src)))
+    print("yontem3 (genis)", len(t3))
+    return t3
 
 def load(tks):
     out = {}
