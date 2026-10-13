@@ -16,6 +16,7 @@ FLOW_LB = 41
 MIN_SCORE = 72
 PERIOD = os.environ.get("OBV_PERIOD", "5d")
 COST = 0.3
+KEEP_DAYS = 180
 
 AYAR = {"hacim": REL_VOL, "aralik": NARROW, "obv": OBV_LB, "rsi": RSI_LEN,
         "vol": VOL_MULT, "akis": FLOW_LB, "puan": MIN_SCORE}
@@ -157,7 +158,11 @@ for s in yeni:
             if a in ek:
                 s[a] = ek[a]
     sozluk[k] = s
-S = sorted(sozluk.values(), key=lambda s: s["z"], reverse=True)[:500]
+bugun_ts = pd.Timestamp(datetime.now(ZoneInfo("Europe/Istanbul")).date())
+kes = (bugun_ts - pd.Timedelta(days=KEEP_DAYS)).strftime("%Y-%m-%d")
+S = sorted([s for s in sozluk.values() if s["z"][:10] >= kes],
+           key=lambda s: s["z"], reverse=True)
+print("saklanan sinyal:", len(S), "(son", KEEP_DAYS, "gün)")
 
 
 def gun_sonuc(S):
@@ -166,14 +171,13 @@ def gun_sonuc(S):
     su = datetime.now(ZoneInfo("Europe/Istanbul"))
     bt = pd.Timestamp(su.date())
     kapandi = (su.hour, su.minute) >= (18, 15)
-    sinir = (bt - pd.Timedelta(days=14)).strftime("%Y-%m-%d")
-    bek = [s for s in S if s.get("g") and (s["z"][:10] >= sinir or "gk" not in s)]
+    bek = [s for s in S if s.get("g")]
     tl = sorted({s["t"] for s in bek})
     seri = {}
     for i in range(0, len(tl), 30):
         grup = [t + ".IS" for t in tl[i:i + 30]]
         try:
-            d = yf.download(grup, period="3mo", interval="1d", group_by="ticker",
+            d = yf.download(grup, period="1y", interval="1d", group_by="ticker",
                             progress=False, threads=True, auto_adjust=False)
         except Exception as e:
             print("günlük hata", e)
@@ -244,7 +248,7 @@ def td(v):
 
 
 satir = ""
-for s in S[:150]:
+for s in S[:600]:
     z = datetime.strptime(s["z"], "%Y-%m-%d %H:%M").strftime("%d.%m %H:%M")
     satir += (f"<tr><td><b>{HT.escape(s['t'])}</b></td><td>{z}</td><td>{s['p']}</td>"
               f"<td>{'—' if s['g'] is None else s['g']}</td>"
