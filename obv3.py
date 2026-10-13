@@ -6,7 +6,8 @@ from zoneinfo import ZoneInfo
 
 np.seterr(all="ignore")
 
-# TradingView ayarların (BIST Patlama Öncesi AL - Kaliteli)
+# TradingView ayarların (BIST Patlama Öncesi AL - Kaliteli) - 15 dk
+TF = "15m"
 RSI_LEN = 24
 RSI_TOL = 0.682
 PRICE_BARS = 31
@@ -25,7 +26,10 @@ MIN_CS = 0.3
 RES_PROX = 0.98
 ROB_BAND = 2
 ROB_MIN = 0.5
-PERIOD = os.environ.get("OBV_PERIOD", "5d")
+SAAT_BAR = 4
+PERIOD = os.environ.get("OBV_PERIOD", "10d")
+if PERIOD == "5d":
+    PERIOD = "10d"
 COST = 0.3
 KEEP_DAYS = 180
 
@@ -56,7 +60,7 @@ def jdef(o):
 
 def tara(x, ad):
     x = x.dropna(subset=["Open", "High", "Low", "Close"]).copy()
-    if len(x) < 200:
+    if len(x) < 120:
         return []
     if x.index.tz is not None:
         x.index = x.index.tz_convert("Europe/Istanbul").tz_localize(None)
@@ -132,7 +136,7 @@ def tara(x, ad):
     for i in idx:
         e = ld[i]
         g = ov[i + 1] if i + 1 <= e else None
-        j = i + 12
+        j = i + SAAT_BAR
         if j <= e:
             k = cv[j]
         elif gun[i] < son_gun:
@@ -160,7 +164,7 @@ islenen = 0
 for i in range(0, len(tick), 30):
     grup = tick[i:i + 30]
     try:
-        d = yf.download(grup, period=PERIOD, interval="5m", group_by="ticker",
+        d = yf.download(grup, period=PERIOD, interval=TF, group_by="ticker",
                         progress=False, threads=True, auto_adjust=False)
     except Exception as e:
         print("hata", e)
@@ -181,7 +185,11 @@ os.makedirs("docs", exist_ok=True)
 eski = []
 if os.path.exists("docs/obv3.json"):
     try:
-        eski = json.load(open("docs/obv3.json", encoding="utf-8")).get("s", [])
+        ej = json.load(open("docs/obv3.json", encoding="utf-8"))
+        if ej.get("tf") == TF:
+            eski = ej.get("s", [])
+        else:
+            print("eski kayıt farklı zaman diliminde, atıldı")
     except Exception:
         eski = []
 sozluk = {(s["t"], s["z"]): s for s in eski}
@@ -268,7 +276,8 @@ except Exception as e:
     print("günlük sonuç hesabı hata", e)
 
 simdi = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%d.%m.%Y %H:%M")
-json.dump({"g": simdi, "s": S, "a": AYAR}, open("docs/obv3.json", "w", encoding="utf-8"),
+json.dump({"g": simdi, "tf": TF, "s": S, "a": AYAR},
+          open("docs/obv3.json", "w", encoding="utf-8"),
           ensure_ascii=False, default=jdef)
 
 
@@ -295,7 +304,7 @@ css = ("body{font:12px/1.45 sans-serif;padding:12px;background:#0e1116;color:#e8
 page = ("<!DOCTYPE html><html lang=tr><head><meta charset=utf-8>"
         "<meta name=viewport content='width=device-width,initial-scale=1'><title>Patlama Öncesi AL</title>"
         f"<style>{css}</style></head><body>"
-        "<h3>BIST Patlama Öncesi AL (Kaliteli) · 5 dk</h3>"
+        "<h3>BIST Patlama Öncesi AL (Kaliteli) · 15 dk</h3>"
         f"<p>Güncelleme: {simdi} · toplam sinyal: {len(S)}</p>"
         "<div class=w><table><tr><th>Hisse</th><th>Zaman</th><th>Sinyal</th><th>Giriş</th>"
         "<th>1sa %</th><th>Gün sonu %</th><th>Şimdi %</th><th>Hacim</th></tr>"
