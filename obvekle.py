@@ -13,9 +13,14 @@ KUTULAR = [
     {"dosya": "obv2.json", "id": "obv2", "m": "OBV2",
      "baslik": "İndikatör sinyali 2 (Dip OBV v2.0 Sade, 5 dk)",
      "not": "Dip OBV v2.0 Sade indikatörünün 5 dakikalık AL sinyali (hacim 12,7x, aralık %1, OBV 111 "
-            "robustluk ±6 / 0,92, RSI 3, dip arama 40 / %6, alt fitil 1, kırılım hacmi 12,7x, "
-            "kırılım hacmi 12,7x). "
+            "robustluk ±6 / 0,92, RSI 3, dip arama 40 / %6, alt fitil 1, kırılım hacmi 12,7x). "
             "Şartları çok sıkı olduğu için sinyal çok seyrek çıkar."},
+    {"dosya": "obv3.json", "id": "obv3", "m": "OBV3", "tip": "pat",
+     "baslik": "İndikatör sinyali 3 (Patlama Öncesi AL, 15 dk)",
+     "not": "TradingView'deki BIST Patlama Öncesi AL (Kaliteli) indikatörünün 15 dakikalık AL sinyali "
+            "(RSI 24 / tolerans 0,682, fiyat yatay 31 bar / %1,543, relative hacim 4,4x, volatilite "
+            "patlaması 2,6x, ADX 19, kapanış gücü 0,3, direnç 0,98, robustluk 2 bar / 0,5). "
+            "Şartları sıkı olduğu için sinyal seyrek çıkar."},
 ]
 
 
@@ -69,6 +74,26 @@ def ozet_g(s, i):
     return "n %d · ort %s · isabet %%%d" % (len(a), f2(ort), isabet)
 
 
+def sonuc_blogu(x):
+    gk = x.get("gk") or []
+    gunler = ""
+    for i in range(5):
+        v = gk[i] if i < len(gk) else None
+        gunler += str(i + 1) + ". gün: <b>" + (f2(v) if v is not None else "-") + "</b>"
+        gunler += " · " if i < 4 else ""
+    return ("<br><br><b>Sinyalden sonra ne oldu (girişe göre)</b><br>" + gunler
+            + "<br>Gün sonu: <b>" + (f2(x["rd"]) if x.get("rd") is not None else "-") + "</b>"
+            + " · Gün içi zirve: <b>" + (f2(x["rh"]) if x.get("rh") is not None else "-") + "</b>"
+            + "<br>Şimdi: <b>" + (f2(x["ss"]) if x.get("ss") is not None else "-") + "</b>"
+            + (" (" + ("bugün" if x.get("sg") == 0 else str(x.get("sg")) + ". gün") + ")"
+               if x.get("sg") is not None else ""))
+
+
+def sarmala(t):
+    return ("<tr style='display:none'><td colspan=5 style='text-align:left;white-space:normal;"
+            "line-height:1.7;padding:8px 6px'>" + t + "</td></tr>")
+
+
 def detay(x, ayar):
     ayar = ayar or {}
     giris = x["g"] if x.get("g") is not None else x.get("p")
@@ -86,20 +111,31 @@ def detay(x, ayar):
           + ": <b>" + n(x.get("nf"), 0) + "</b> (%" + n(x.get("nm")) + ")"
           + "<br>CMF: <b>" + n(x.get("cmf"), 3) + "</b> · Puan: <b>" + n(x.get("sc"), 0) + "</b>"
           + es("min", ayar.get("puan"), 0))
-    gk = x.get("gk") or []
-    gunler = ""
-    for i in range(5):
-        v = gk[i] if i < len(gk) else None
-        gunler += str(i + 1) + ". gün: <b>" + (f2(v) if v is not None else "-") + "</b>"
-        gunler += " · " if i < 4 else ""
-    t += ("<br><br><b>Sinyalden sonra ne oldu (girişe göre)</b><br>" + gunler
-          + "<br>Gün sonu: <b>" + (f2(x["rd"]) if x.get("rd") is not None else "-") + "</b>"
-          + " · Gün içi zirve: <b>" + (f2(x["rh"]) if x.get("rh") is not None else "-") + "</b>"
-          + "<br>Şimdi: <b>" + (f2(x["ss"]) if x.get("ss") is not None else "-") + "</b>"
-          + (" (" + ("bugün" if x.get("sg") == 0 else str(x.get("sg")) + ". gün") + ")"
-             if x.get("sg") is not None else ""))
-    return ("<tr style='display:none'><td colspan=5 style='text-align:left;white-space:normal;"
-            "line-height:1.7;padding:8px 6px'>" + t + "</td></tr>")
+    t += sonuc_blogu(x)
+    return sarmala(t)
+
+
+def detay_pat(x, ayar):
+    ayar = ayar or {}
+    giris = x["g"] if x.get("g") is not None else x.get("p")
+    t = ("<b>Sinyal fiyatı:</b> " + n(x.get("p")) + " · <b>Giriş:</b> " + n(giris)
+         + " · <b>Son fiyat:</b> " + n(x.get("son")))
+    t += ("<br><br><b>Sinyaldeki gerçek değerler</b>"
+          + "<br>RSI Yatay Tolerans: <b>ΔRSI " + n(x.get("rdl"), 3) + "</b>"
+          + es("max", ayar.get("rsit"), 3) + " · RSI " + n(x.get("rsi"), 1)
+          + "<br>Fiyat Yatay (" + str(ayar.get("bar", 31)) + " bar): <b>aralık %" + n(x.get("rg"), 3) + "</b>"
+          + es("max", ayar.get("aralik"), 3)
+          + "<br>Relative Volume: <b>" + n(x.get("rv")) + "x</b>" + es("min", ayar.get("hacim"))
+          + "<br>Volatilite Patlama (bar aralığı / ort.): <b>" + n(x.get("vp")) + "x</b>"
+          + es("min", ayar.get("vp"))
+          + "<br>ADX: <b>" + n(x.get("adx"), 1) + "</b>" + es("min", ayar.get("adx"), 0)
+          + " · DI+ " + n(x.get("dp"), 1) + " · DI− " + n(x.get("dm"), 1)
+          + "<br>Kapanış Gücü: <b>" + n(x.get("cs")) + "</b>" + es("min", ayar.get("cs"))
+          + "<br>Dirence Yakınlık: <b>zirveye %" + n(x.get("dy")) + "</b>"
+          + " <small style='color:var(--mute)'>(zirvenin en fazla %2 altında)</small>"
+          + "<br>Robustluk: <b>" + n(x.get("rb")) + "</b>" + es("min", ayar.get("rb")))
+    t += sonuc_blogu(x)
+    return sarmala(t)
 
 
 def kutu(c):
@@ -109,6 +145,7 @@ def kutu(c):
         return ""
     s = j.get("s", [])
     ayar = j.get("a")
+    dfn = detay_pat if c.get("tip") == "pat" else detay
     satir = ""
     for x in s[:LIMIT]:
         z = x["z"]
@@ -119,7 +156,7 @@ def kutu(c):
                   + zaman + " · " + str(x["rv"]).replace(".", ",") + "x hacim</small></td><td>"
                   + str(giris).replace(".", ",") + "</td>"
                   + hucre(x.get("r1")) + hucre(x.get("rd")) + simdi_hucre(x) + "</tr>")
-        satir += detay(x, ayar)
+        satir += dfn(x, ayar)
     if not satir:
         satir = "<tr><td colspan=5>Henüz sinyal yok</td></tr>"
     a, b = "<!--" + c["m"] + "-->", "<!--/" + c["m"] + "-->"
