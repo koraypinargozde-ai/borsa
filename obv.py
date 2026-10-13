@@ -154,7 +154,7 @@ for s in yeni:
     k = (s["t"], s["z"])
     ek = sozluk.get(k)
     if ek:
-        for a in ("gk", "ss", "sg"):
+        for a in ("gk", "ss", "sg", "bd"):
             if a in ek:
                 s[a] = ek[a]
     sozluk[k] = s
@@ -168,6 +168,7 @@ print("saklanan sinyal:", len(S), "(son", KEEP_DAYS, "gün)")
 def gun_sonuc(S):
     # gk = sinyalden sonraki 1..5. işlem günü kapanışının girişe göre % değişimi
     # ss = en son fiyata göre % değişim, sg = sinyalden bu yana geçen işlem günü
+    # bd = bölünme (bedelsiz) düzeltme oranı, sadece tespit edilirse yazılır
     su = datetime.now(ZoneInfo("Europe/Istanbul"))
     bt = pd.Timestamp(su.date())
     kapandi = (su.hour, su.minute) >= (18, 15)
@@ -202,6 +203,18 @@ def gun_sonuc(S):
             s.setdefault("gk", [])
             continue
         g = s["g"]
+        f = 1.0
+        p = s.get("p")
+        ck = float(cs.iloc[k])
+        if p and ck > 0:
+            r = p / ck
+            if r > 1.4 or r < 0.7:
+                f = r
+        if f != 1.0:
+            g = g / f
+            s["bd"] = round(f, 3)
+        else:
+            s.pop("bd", None)
         gk = []
         for dd in range(1, 6):
             j = k + dd
