@@ -3,6 +3,7 @@ import json, re, html as HT
 D = "docs/"
 HEDEF = '<details class="b" id="perf"></details>'
 TOG = """var n=this.nextElementSibling;n.style.display=(n.style.display=='none'?'table-row':'none')"""
+LIMIT = 400
 
 KUTULAR = [
     {"dosya": "obv.json", "id": "obv", "m": "OBV",
@@ -12,7 +13,8 @@ KUTULAR = [
     {"dosya": "obv2.json", "id": "obv2", "m": "OBV2",
      "baslik": "İndikatör sinyali 2 (Dip OBV v2.0 Sade, 5 dk)",
      "not": "Dip OBV v2.0 Sade indikatörünün 5 dakikalık AL sinyali (hacim 12,7x, aralık %1, OBV 111 "
-            "robustluk ±6 / 0,92, RSI 3, dip arama 40 / %6, alt fitil 1, kırılım hacmi 12,7x). "
+            "robustluk ±6 / 0,92, RSI 3, dip arama 40 / %6, alt fitil 1, kırılım hacmi 12,7x, "
+            "kırılım hacmi 12,7x). "
             "Şartları çok sıkı olduğu için sinyal çok seyrek çıkar."},
 ]
 
@@ -108,7 +110,7 @@ def kutu(c):
     s = j.get("s", [])
     ayar = j.get("a")
     satir = ""
-    for x in s[:25]:
+    for x in s[:LIMIT]:
         z = x["z"]
         zaman = z[8:10] + "." + z[5:7] + " " + z[11:]
         giris = x["g"] if x.get("g") is not None else x["p"]
@@ -132,7 +134,7 @@ def kutu(c):
             + "Şimdi = girişe göre en son fiyat, altında sinyalden bu yana kaçıncı işlem günü olduğu yazar. "
             + "Detay için hisseye dokun. "
             + "Tablodaki yüzdeler komisyonsuz, üstteki özet %0,3 komisyon düşülmüş net değerdir. "
-            + "Son 25 sinyal gösterilir. Veri gecikmelidir; örnek sayısı azken yanıltıcı olabilir.</p>"
+            + "Sinyaller 180 gün saklanır ve hepsi listelenir. Veri gecikmelidir; örnek sayısı azken yanıltıcı olabilir.</p>"
             + "</details>" + b)
 
 
