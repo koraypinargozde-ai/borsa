@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Balina test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>🐋 BALİNA 100 GERİYE TEST (6 koşullu skor)
+Dönem: 13.11.2023 - 30.09.2026 · hisse: 512 · örnek: 342663
+Eğitim: 13.11.2023-19.11.2025 · test: sonrası · giriş ertesi gün açılış · %0.3 maliyet
+Sadece o gün %7&#x27;den az yükselmiş, likit hisseler. n5/n10/n20 = sinyal gününden 5/10/20 gün sonra kapanış, net %.
+eğ10 / test10 = n10&#x27;un eğitim ve test dönemindeki ortalaması. İkisi de taban üstündeyse güvenilir.
+Uyarı: örnekler üst üste biner, güncel hisse listesi (hayatta kalma yanlılığı), stop yok.
+
+KOŞULLAR:
+  k1 = yatay/dar bant (5g aralık ≤%8)
+  k2 = hacim 2x+ ama değ &lt;%4
+  k3 = OBV yükseliyor (10g)
+  k4 = CMF&gt;0.05 ve artıyor
+  k5 = satış hacmi zayıf + kapanış tutunuyor
+  k6 = BIST 100&#x27;den güçlü (10g)
+
+grup                      n  tavan     n5    n10    n20   eğ10  test10
+TABAN (hepsi)        342663   1.9%  -0.18  +0.10  +0.81  +0.53   -0.88
+
+--- TEK KOŞUL ---
+k1                   117155   0.9%  -0.04  +0.32  +0.92  +0.52   -0.07
+k2                    18239   3.8%  -1.03  -0.96  -0.57  -0.38   -2.25
+k3                   188290   2.1%  -0.06  +0.40  +1.22  +0.75   -0.49
+k4                    44678   2.3%  +0.17  +0.84  +2.16  +1.34   -0.37
+k5                    67767   2.3%  +0.04  +0.73  +2.17  +1.12   -0.30
+k6                   143731   2.3%  +0.03  +0.51  +1.32  +1.03   -0.95
+
+--- SKOR (kaç koşul birlikte) ---
+skor = 0              72365   2.1%  -0.41  -0.44  +0.26  +0.18   -1.81
+skor = 1              95779   1.5%  -0.36  -0.29  +0.12  +0.02   -0.90
+skor = 2              83075   2.0%  -0.01  +0.34  +0.91  +0.70   -0.51
+skor = 3              54327   1.9%  +0.04  +0.71  +1.71  +1.05   -0.20
+skor = 4              30765   2.4%  +0.09  +0.78  +2.22  +1.26   -0.47
+skor = 5               6222   2.2%  -0.07  +0.42  +1.35  +0.94   -0.96
+skor = 6                130   2.3%  +0.43  +0.38  +3.47  +1.73   -3.15
+
+--- SKOR ≥ ---
+skor ≥ 3              91444   2.1%  +0.05  +0.72  +1.86  +1.12   -0.35
+skor ≥ 4              37117   2.4%  +0.06  +0.72  +2.08  +1.21   -0.56
+skor ≥ 5               6352   2.2%  -0.06  +0.42  +1.39  +0.96   -1.01
+
+--- HANGİ KOŞUL FARK YARATIYOR? (skor ≥4 içinde, koşul varsa / yoksa) ---
+k1 VAR                14304   0.8%  +0.16  +0.90  +2.19  +1.40   -0.37
+k1 YOK                22813   3.3%  -0.00  +0.61  +2.01  +1.09   -0.69
+k2 VAR                 6114   4.4%  -0.64  -0.26  +0.60  +0.52   -2.26
+k2 YOK                31003   2.0%  +0.20  +0.91  +2.37  +1.35   -0.23
+k3 VAR                37103   2.4%  +0.06  +0.72  +2.08  +1.21   -0.57
+k4 VAR                27739   2.5%  +0.18  +0.85  +2.29  +1.26   -0.23
+k4 YOK                 9378   1.9%  -0.30  +0.35  +1.45  +1.06   -1.62
+k5 VAR                34852   2.4%  +0.05  +0.71  +2.07  +1.18   -0.53
+k5 YOK                 2265   1.5%  +0.27  +0.89  +2.21  +1.62   -1.05
+k6 VAR                34838   2.5%  +0.04  +0.68  +2.01  +1.20   -0.74
+k6 YOK                 2279   1.0%  +0.44  +1.42  +3.13  +1.46   +1.37
+
+=== BUGÜN SKORU ≥4 OLANLAR (14.10.2026) ===
+GARAN    skor 5 [1-3456] değ -0.6% hacim 0.5x
+AHGAZ    skor 5 [1-3456] değ -1.1% hacim 0.6x
+TTKOM    skor 5 [1-3456] değ +0.5% hacim 0.6x
+CRDFA    skor 5 [-23456] değ -1.3% hacim 3.8x
+ALARK    skor 5 [1-3456] değ -0.1% hacim 0.8x
+HDFGS    skor 5 [-23456] değ -7.4% hacim 7.9x
+GLYHO    skor 5 [1-3456] değ +0.3% hacim 0.5x
+OYAYO    skor 5 [1-3456] değ +1.1% hacim 1.0x
+OZSUB    skor 5 [1-3456] değ +0.0% hacim 0.4x
+RGYAS    skor 5 [1-3456] değ +0.0% hacim 0.4x
+TRCAS    skor 5 [1-3456] değ -1.8% hacim 0.7x
+INVES    skor 5 [1-3456] değ -1.5% hacim 0.4x
+TSKB     skor 4 [1-3-56] değ -0.6% hacim 0.7x
+ANHYT    skor 4 [1-3-56] değ +1.9% hacim 1.0x
+TUPRS    skor 4 [1-3-56] değ +1.4% hacim 0.7x
+BEGYO    skor 4 [--3456] değ +9.9% hacim 4.9x
+TAVHL    skor 4 [1-3-56] değ +1.1% hacim 0.6x
+SOKM     skor 4 [--3456] değ +1.1% hacim 1.1x
+PETKM    skor 4 [1-3-56] değ -0.5% hacim 0.6x
+YKBNK    skor 4 [1-34-6] değ -1.3% hacim 0.6x
+ALBRK    skor 4 [1-34-6] değ +0.0% hacim 0.4x
+ASELS    skor 4 [1-3-56] değ -0.8% hacim 0.6x
+EKGYO    skor 4 [1-34-6] değ -0.9% hacim 0.5x
+FRIGO    skor 4 [--3456] değ +2.2% hacim 1.3x
+ERSU     skor 4 [--3456] değ -2.4% hacim 0.5x</pre></body></html>
