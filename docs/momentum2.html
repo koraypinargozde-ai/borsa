@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Momentum2 test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST 2 AYDA +%30 HEDEF TESTİ
+Dönem: 22.04.2024 - 14.08.2026 · hisse: 511 · örnek tarih: 116 (her 5 işlem günü) · satır: 57220
+Giriş: ertesi gün açılış. Pencere: 40 işlem günü (~2 ay). Hedef +%30 (ek: +%40), stop -%15.
++30% / +40% = stop&#x27;tan ÖNCE hedefe değenlerin oranı. Aynı gün ikisi de değerse stop sayıldı.
+stop = hedeften önce -%15&#x27;e inenler. ort = kurala göre ortalama net getiri (hedefte çık,
+stopta çık, yoksa 40. gün kapanış; %0.3 maliyet). maxY = pencerede ort. en yüksek fiyat %.
+kat = +30% oranı / taban oranı. Gap&#x27;ler (stopu aşağıdan geçen açılış) hesaba katılmadı.
+Örnekler üst üste biner, güncel hisse listesi (hayatta kalma yanlılığı).
+
+grup                           n  +30%  kat  +40%  stop    ort  maxY
+TÜM (taban)                57220 19.5% 1.0x 11.7%   35%  +1.36    21
+RS63 üst %10                5788 29.4% 1.5x 19.5%   47%  +2.66    29
+RS63 üst %20               11515 26.0% 1.3x 16.5%   45%  +1.97    26
+RS63 %20 + hacim↑ + zirve   2351 27.6% 1.4x 18.2%   46%  +2.25    28
+RS63 %10 + hacim↑ + zirve   1275 31.5% 1.6x 21.7%   46%  +3.54    32
+yatay baz (60g ≤%30)       21706 16.1% 0.8x  9.0%   27%  +1.80    18
+baz + hacim↑                4147 16.4% 0.8x  9.6%   32%  +0.48    18
+baz + RS63 üst yarı         9110 17.5% 0.9x  9.7%   29%  +2.46    19
+baz + CMF&gt;0.05 + OBV↑       3263 17.9% 0.9x 10.0%   28%  +2.67    19
+CMF&gt;0.05 + OBV↑            11426 23.7% 1.2x 15.2%   39%  +2.29    24
+RS63 %20 + CMF + OBV↑       5206 28.2% 1.4x 18.7%   44%  +2.89    28
+RS63 alt %10 (ters)         5672 21.8% 1.1x 13.2%   38%  +1.17    22
+
+=== EĞİTİM (22.04.2024-05.12.2025) / TEST (sonrası) ===
+grup                        n_eğ  +30%    ort  n_te  +30%    ort
+TÜM (taban)                39741 19.5%  +1.69 17479 19.7%  +0.62
+RS63 üst %10                4018 28.6%  +2.46  1770 31.2%  +3.11
+RS63 üst %20                7999 25.8%  +2.02  3516 26.4%  +1.86
+RS63 %20 + hacim↑ + zirve   1601 28.4%  +2.83   750 26.0%  +1.02
+RS63 %10 + hacim↑ + zirve    884 31.2%  +3.79   391 32.2%  +2.98
+yatay baz (60g ≤%30)       14433 15.7%  +1.98  7273 16.9%  +1.44
+baz + hacim↑                2670 16.5%  +1.20  1477 16.2%  -0.82
+baz + RS63 üst yarı         6128 16.4%  +2.30  2982 19.7%  +2.79
+baz + CMF&gt;0.05 + OBV↑       2204 18.7%  +3.72  1059 16.2%  +0.49
+CMF&gt;0.05 + OBV↑             7935 23.7%  +2.73  3491 23.7%  +1.30
+RS63 %20 + CMF + OBV↑       3573 27.9%  +2.87  1633 29.0%  +2.92
+RS63 alt %10 (ters)         3937 22.3%  +1.96  1735 20.7%  -0.60
+
+Not: eğitimde ve testte birlikte +30% oranı tabanın üstünde ve ort &gt; 0 olan satır yoksa kenar yok.</pre></body></html>
