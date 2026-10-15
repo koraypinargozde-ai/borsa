@@ -1,39 +1,62 @@
-<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Momentum2 test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST 2 AYDA +%30 HEDEF TESTİ
-Dönem: 22.04.2024 - 14.08.2026 · hisse: 511 · örnek tarih: 116 (her 5 işlem günü) · satır: 57220
-Giriş: ertesi gün açılış. Pencere: 40 işlem günü (~2 ay). Hedef +%30 (ek: +%40), stop -%15.
-+30% / +40% = stop&#x27;tan ÖNCE hedefe değenlerin oranı. Aynı gün ikisi de değerse stop sayıldı.
-stop = hedeften önce -%15&#x27;e inenler. ort = kurala göre ortalama net getiri (hedefte çık,
-stopta çık, yoksa 40. gün kapanış; %0.3 maliyet). maxY = pencerede ort. en yüksek fiyat %.
-kat = +30% oranı / taban oranı. Gap&#x27;ler (stopu aşağıdan geçen açılış) hesaba katılmadı.
-Örnekler üst üste biner, güncel hisse listesi (hayatta kalma yanlılığı).
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Momentum2 test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST STOP / HEDEF KURALI KARŞILAŞTIRMA (2 ay)
+Dönem: 22.04.2024 - 14.08.2026 · hisse: 511 · satır: 57220
+Giriş: ertesi gün açılış. Pencere: 40 işlem günü. Aynı gün hedef+stop = stop sayıldı.
+Kural: hedefe değerse hedefte çık, stopa değerse stopta çık, yoksa 40. gün kapanış. Net %0.3 maliyet.
+hedef% = hedefe stoptan önce ulaşan oran · stop% = stoptan çıkan oran · ort = ort. net getiri %
+eğ / test = ort&#x27;un eğitim (ilk %70 tarih) ve test dönemindeki değeri. İkisi de yüksekse güvenilir.
+Gap&#x27;ler stop hesabına katılmadı (gerçekte stop biraz daha kötü çıkar). Hayatta kalma yanlılığı var.
 
-grup                           n  +30%  kat  +40%  stop    ort  maxY
-TÜM (taban)                57220 19.5% 1.0x 11.7%   35%  +1.36    21
-RS63 üst %10                5788 29.4% 1.5x 19.5%   47%  +2.66    29
-RS63 üst %20               11515 26.0% 1.3x 16.5%   45%  +1.97    26
-RS63 %20 + hacim↑ + zirve   2351 27.6% 1.4x 18.2%   46%  +2.25    28
-RS63 %10 + hacim↑ + zirve   1275 31.5% 1.6x 21.7%   46%  +3.54    32
-yatay baz (60g ≤%30)       21706 16.1% 0.8x  9.0%   27%  +1.80    18
-baz + hacim↑                4147 16.4% 0.8x  9.6%   32%  +0.48    18
-baz + RS63 üst yarı         9110 17.5% 0.9x  9.7%   29%  +2.46    19
-baz + CMF&gt;0.05 + OBV↑       3263 17.9% 0.9x 10.0%   28%  +2.67    19
-CMF&gt;0.05 + OBV↑            11426 23.7% 1.2x 15.2%   39%  +2.29    24
-RS63 %20 + CMF + OBV↑       5206 28.2% 1.4x 18.7%   44%  +2.89    28
-RS63 alt %10 (ters)         5672 21.8% 1.1x 13.2%   38%  +1.17    22
+--- TÜM (taban) (n=57220) ---
+kural                      hedef%  stop%    ort     eğ   test
+hedef %30 / stop %15        19.5%    35%  +1.36  +1.69  +0.62
+hedef %30 / stop %20        20.3%    20%  +1.64  +2.06  +0.69
+hedef %30 / stop %25        20.6%    11%  +1.78  +2.26  +0.68
+hedef %25 / stop %15        25.5%    35%  +1.30  +1.56  +0.70
+hedef %35 / stop %15        15.0%    35%  +1.37  +1.73  +0.54
+hedef %40 / stop %20        12.3%    20%  +1.69  +2.19  +0.55
+hedef %30 / stopsuz         20.8%     0%  +1.43  +2.01  +0.10
+hedefsiz / stopsuz           0.0%     0%  +1.82  +2.70  -0.17
 
-=== EĞİTİM (22.04.2024-05.12.2025) / TEST (sonrası) ===
-grup                        n_eğ  +30%    ort  n_te  +30%    ort
-TÜM (taban)                39741 19.5%  +1.69 17479 19.7%  +0.62
-RS63 üst %10                4018 28.6%  +2.46  1770 31.2%  +3.11
-RS63 üst %20                7999 25.8%  +2.02  3516 26.4%  +1.86
-RS63 %20 + hacim↑ + zirve   1601 28.4%  +2.83   750 26.0%  +1.02
-RS63 %10 + hacim↑ + zirve    884 31.2%  +3.79   391 32.2%  +2.98
-yatay baz (60g ≤%30)       14433 15.7%  +1.98  7273 16.9%  +1.44
-baz + hacim↑                2670 16.5%  +1.20  1477 16.2%  -0.82
-baz + RS63 üst yarı         6128 16.4%  +2.30  2982 19.7%  +2.79
-baz + CMF&gt;0.05 + OBV↑       2204 18.7%  +3.72  1059 16.2%  +0.49
-CMF&gt;0.05 + OBV↑             7935 23.7%  +2.73  3491 23.7%  +1.30
-RS63 %20 + CMF + OBV↑       3573 27.9%  +2.87  1633 29.0%  +2.92
-RS63 alt %10 (ters)         3937 22.3%  +1.96  1735 20.7%  -0.60
+--- RS63 üst %10 (n=5788) ---
+kural                      hedef%  stop%    ort     eğ   test
+hedef %30 / stop %15        29.4%    47%  +2.66  +2.46  +3.11
+hedef %30 / stop %20        31.5%    35%  +2.75  +2.59  +3.10
+hedef %30 / stop %25        32.2%    25%  +2.70  +2.54  +3.05
+hedef %25 / stop %15        36.4%    45%  +2.53  +2.38  +2.89
+hedef %35 / stop %15        23.8%    48%  +2.83  +2.60  +3.36
+hedef %40 / stop %20        20.9%    37%  +3.10  +2.91  +3.52
+hedef %30 / stopsuz         32.8%     0%  +2.14  +2.04  +2.35
+hedefsiz / stopsuz           0.0%     0%  +4.39  +5.13  +2.72
 
-Not: eğitimde ve testte birlikte +30% oranı tabanın üstünde ve ort &gt; 0 olan satır yoksa kenar yok.</pre></body></html>
+--- RS63 %10 + hacim↑ + zirve (n=1275) ---
+kural                      hedef%  stop%    ort     eğ   test
+hedef %30 / stop %15        31.5%    46%  +3.54  +3.79  +2.98
+hedef %30 / stop %20        33.9%    34%  +3.84  +4.44  +2.49
+hedef %30 / stop %25        34.5%    25%  +3.77  +4.27  +2.65
+hedef %25 / stop %15        38.4%    44%  +3.31  +3.73  +2.38
+hedef %35 / stop %15        25.4%    47%  +3.50  +3.65  +3.16
+hedef %40 / stop %20        23.5%    36%  +4.08  +4.61  +2.88
+hedef %30 / stopsuz         35.3%     0%  +3.66  +4.26  +2.30
+hedefsiz / stopsuz           0.0%     0%  +7.48  +8.94  +4.16
+
+--- RS63 %20 + CMF + OBV↑ (n=5206) ---
+kural                      hedef%  stop%    ort     eğ   test
+hedef %30 / stop %15        28.2%    44%  +2.89  +2.87  +2.92
+hedef %30 / stop %20        30.3%    31%  +3.22  +3.24  +3.18
+hedef %30 / stop %25        31.0%    21%  +3.22  +3.30  +3.03
+hedef %25 / stop %15        35.0%    42%  +2.67  +2.63  +2.77
+hedef %35 / stop %15        22.7%    45%  +3.10  +3.04  +3.23
+hedef %40 / stop %20        20.0%    32%  +3.78  +3.67  +4.00
+hedef %30 / stopsuz         31.4%     0%  +2.75  +2.88  +2.47
+hedefsiz / stopsuz           0.0%     0%  +4.60  +4.97  +3.77
+
+--- CMF&gt;0.05 + OBV↑ (n=11426) ---
+kural                      hedef%  stop%    ort     eğ   test
+hedef %30 / stop %15        23.7%    39%  +2.29  +2.73  +1.30
+hedef %30 / stop %20        25.1%    25%  +2.53  +3.06  +1.34
+hedef %30 / stop %25        25.6%    15%  +2.65  +3.21  +1.40
+hedef %25 / stop %15        30.1%    38%  +2.11  +2.54  +1.14
+hedef %35 / stop %15        18.8%    40%  +2.41  +2.79  +1.53
+hedef %40 / stop %20        16.1%    26%  +2.84  +3.26  +1.88
+hedef %30 / stopsuz         25.9%     0%  +2.36  +2.96  +1.00
+hedefsiz / stopsuz           0.0%     0%  +3.55  +4.25  +1.95</pre></body></html>
