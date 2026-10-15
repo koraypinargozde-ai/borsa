@@ -1,41 +1,33 @@
-<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Momentum2 test</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BIST ŞİŞME TESTİ: RSI ve 63 GÜN YÜKSELİŞE GÖRE (2 ay)
-Dönem: 22.04.2024 - 14.08.2026 · hisse: 511 · satır: 57631
-GRUP = göreceli güç (RS63) üst %20 + CMF&gt;0.05 + OBV↑. RSI = RSI14. 63g yükseliş = hissenin kendi 63 günlük getirisi.
-Giriş: ertesi gün açılış, pencere 40 işlem günü, net %0.3 maliyet. Aynı gün hedef+stop = stop.
-hedef% = stoptan önce hedefe ulaşan · stop% = stoptan çıkan · ort = ort. net getiri %
-eğ / test = eğitim (ilk %70 tarih) / test dönemi ort. Gap&#x27;ler hesaba katılmadı, hayatta kalma yanlılığı var.
+<!DOCTYPE html><html lang=tr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Adaylar</title><style>body{font:11px/1.45 monospace;padding:12px;background:#0e1116;color:#e8eaed}pre{overflow-x:auto}</style></head><body><pre>BUGÜNÜN ADAYLARI (15.10.2026 kapanışı)
+Süzgeç: göreceli güç (63g getiri - BIST 100) üst %20 + CMF&gt;0.05 + OBV↑ (20g) + likit.
+Geriye testte en iyi kural: hedef +%40 / stop -%20, 40 işlem günü (~2 ay).
+Bu geriye test ortalaması, garanti değil: işlemlerin ~%32&#x27;si stopa, ~%20&#x27;si hedefe gitti.
+⚠ = 63 günde %80+ yükselmiş: hedefe de stopa da daha sık gidiyor (stop ~%44).
+Likit hisse: 482 · aday: 24
+Fiyatlar bugünün kapanışına göre; gerçek giriş ertesi gün açılışı olur.
 
-Grubun ortalamaları: RSI 67 · 63g yükseliş %63
-
---- KURAL: hedef %40 / stop %20 ---
-grup                         n hedef%  stop%    ort     eğ   test
-TÜM (taban)              57631  12.2%    20%  +1.67  +2.16  +0.55
-GRUP: RS63%20+CMF+OBV     5261  20.1%    32%  +3.81  +3.73  +4.00
-  RSI &lt; 60                1456  18.8%    32%  +2.73  +2.68  +2.85
-  RSI 60-70               1731  17.8%    30%  +3.50  +3.57  +3.34
-  RSI 70+                 2074  23.0%    33%  +4.84  +4.61  +5.33
-  63g yükseliş &lt; %40      2190  15.3%    25%  +3.29  +3.46  +2.90
-  63g yükseliş %40-80     1931  20.7%    33%  +3.93  +4.04  +3.67
-  63g yükseliş %80+       1140  28.6%    44%  +4.62  +3.71  +6.42
-
---- KURAL: hedef %30 / stop %20 ---
-grup                         n hedef%  stop%    ort     eğ   test
-TÜM (taban)              57631  20.3%    20%  +1.62  +2.03  +0.69
-GRUP: RS63%20+CMF+OBV     5261  30.3%    31%  +3.23  +3.26  +3.18
-  RSI &lt; 60                1456  28.4%    31%  +2.11  +2.13  +2.06
-  RSI 60-70               1731  28.1%    30%  +3.11  +3.26  +2.82
-  RSI 70+                 2074  33.5%    32%  +4.12  +4.07  +4.23
-  63g yükseliş &lt; %40      2190  24.2%    25%  +2.65  +2.85  +2.17
-  63g yükseliş %40-80     1931  32.5%    32%  +3.56  +3.67  +3.33
-  63g yükseliş %80+       1140  38.3%    42%  +3.80  +3.35  +4.69
-
---- KURAL: hedefsiz / stopsuz ---
-grup                         n hedef%  stop%    ort     eğ   test
-TÜM (taban)              57631   0.0%     0%  +1.79  +2.65  -0.17
-GRUP: RS63%20+CMF+OBV     5261   0.0%     0%  +4.59  +4.97  +3.77
-  RSI &lt; 60                1456   0.0%     0%  +2.21  +2.25  +2.10
-  RSI 60-70               1731   0.0%     0%  +4.50  +5.99  +1.45
-  RSI 70+                 2074   0.0%     0%  +6.35  +6.11  +6.88
-  63g yükseliş &lt; %40      2190   0.0%     0%  +3.49  +3.81  +2.75
-  63g yükseliş %40-80     1931   0.0%     0%  +5.17  +5.50  +4.42
-  63g yükseliş %80+       1140   0.0%     0%  +5.73  +6.36  +4.49</pre></body></html>
+hisse     kapanış  RS63  63g%  RSI   CMF     stop    hedef
+RYGYO       49.10   +65    51   54  0.09    39.28    68.74
+ENERY       14.26   +65    51   66  0.18    11.41    19.96
+KRGYO        3.45   +51    37   54  0.12     2.76     4.83
+AHGAZ       47.46   +49    35   67  0.27    37.97    66.44
+CELHA       31.14   +39    25   61  0.09    24.91    43.60
+KRPLS       11.08   +38    24   46  0.07     8.86    15.51
+DURDO        6.31   +37    23   62  0.19     5.05     8.83
+RYSAS       25.62   +36    22   51  0.11    20.50    35.87
+GMTAS       49.42   +28    14   54  0.20    39.54    69.19
+YKBNK       36.44   +25    11   54  0.13    29.15    51.02
+ETILR        7.05   +24    10   54  0.26     5.64     9.87
+ALBRK        8.85   +23     9   56  0.14     7.08    12.39
+FRIGO        2.34   +23     9   64  0.25     1.87     3.28
+VERUS      509.00   +21     7   49  0.15   407.20   712.60
+INDES       11.91   +20     6   59  0.13     9.53    16.67
+INVES      705.00   +20     6   39  0.10   564.00   987.00
+GLYHO       17.52   +16     2   61  0.37    14.02    24.53
+BEGYO        3.79   +13    -1   74  0.37     3.03     5.31
+SANKO       20.06   +13    -1   51  0.07    16.05    28.08
+MEPET       19.87   +10    -4   47  0.21    15.90    27.82
+KLSYN       14.29   +10    -4   47  0.42    11.43    20.01
+AKFGY        2.53    +5    -9   51  0.16     2.02     3.54
+METRO        7.79    +4   -10   54  0.15     6.23    10.91
+TTKOM       52.75    +3   -11   48  0.07    42.20    73.85</pre></body></html>
