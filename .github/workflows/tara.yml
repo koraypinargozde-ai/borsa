@@ -35,6 +35,8 @@ jobs:
         continue-on-error: true
       - run: python gucluekle.py
         continue-on-error: true
+      - run: python adayekle.py
+        continue-on-error: true
       - run: python devasaekle.py
         continue-on-error: true
       - run: python sarekle.py
