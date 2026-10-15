@@ -7,8 +7,7 @@ COST = 0.3
 STEP = 5
 LIQ = 2_000_000
 W = 40
-RULES = [(30, 15), (30, 20), (30, 25), (25, 15), (35, 15), (40, 20),
-         (30, None), (None, None)]
+RULES = [(40, 20), (30, 20), (None, None)]
 
 
 def rname(r):
@@ -59,21 +58,23 @@ for i in range(0, len(tick), 50):
             o, h, l, c, v = x["Open"], x["High"], x["Low"], x["Close"], x["Volume"]
             xc = xc_all.reindex(x.index, method="ffill")
             av = v.shift(1).rolling(20).mean()
-            av60 = v.shift(1).rolling(60).mean()
             rs63 = ((c / c.shift(63) - 1) - (xc / xc.shift(63) - 1)) * 100
-            vr = av / av60
-            near = c / c.rolling(120).max()
+            r63 = (c / c.shift(63) - 1) * 100
+            dl = c.diff()
+            gn = dl.clip(lower=0).ewm(alpha=1 / 14, adjust=False).mean()
+            ls = (-dl.clip(upper=0)).ewm(alpha=1 / 14, adjust=False).mean()
+            rsi = 100 - 100 / (1 + gn / ls.replace(0, np.nan))
             rg = (h - l).replace(0, np.nan)
             mf = (((c - l) - (h - c)) / rg).fillna(0)
             cmf = (mf * v).rolling(20).sum() / v.rolling(20).sum()
-            obv = (np.sign(c.diff()).fillna(0) * v).cumsum()
+            obv = (np.sign(dl).fillna(0) * v).cumsum()
             obvup = (obv > obv.shift(20)).astype(int)
             f = pd.DataFrame({"date": x.index, "h": t[:-3], "rs63": rs63.values,
-                              "vr": vr.values, "near": near.values,
+                              "r63": r63.values, "rsi": rsi.values,
                               "cmf": cmf.values, "obvup": obvup.values})
             ok = (x.index.isin(sample) & ((av * c) >= LIQ).values &
-                  rs63.notna().values & vr.notna().values &
-                  near.notna().values & cmf.notna().values)
+                  rs63.notna().values & r63.notna().values & rsi.notna().values &
+                  cmf.notna().values)
             oa, ha, la, ca = o.values, h.values, l.values, c.values
             n = len(x)
             pos = [j for j in np.where(ok)[0] if j + W < n and oa[j + 1] > 0]
@@ -111,35 +112,39 @@ D["p63"] = D.groupby("date")["rs63"].rank(pct=True)
 dates = sorted(D.date.unique())
 cut = dates[int(len(dates) * 0.7)]
 tr = D.date < cut
-cmfobv = (D.cmf > 0.05) & (D.obvup == 1)
+base = (D.p63 >= 0.8) & (D.cmf > 0.05) & (D.obvup == 1)
 
-G = {
-    "TÜM (taban)": pd.Series(True, index=D.index),
-    "RS63 üst %10": D.p63 >= 0.9,
-    "RS63 %10 + hacim↑ + zirve": (D.p63 >= 0.9) & (D.vr > 1.2) & (D.near >= 0.9),
-    "RS63 %20 + CMF + OBV↑": (D.p63 >= 0.8) & cmfobv,
-    "CMF>0.05 + OBV↑": cmfobv,
-}
+ROWS = [
+    ("TÜM (taban)", pd.Series(True, index=D.index)),
+    ("GRUP: RS63%20+CMF+OBV", base),
+    ("  RSI < 60", base & (D.rsi < 60)),
+    ("  RSI 60-70", base & (D.rsi >= 60) & (D.rsi < 70)),
+    ("  RSI 70+", base & (D.rsi >= 70)),
+    ("  63g yükseliş < %40", base & (D.r63 < 40)),
+    ("  63g yükseliş %40-80", base & (D.r63 >= 40) & (D.r63 < 80)),
+    ("  63g yükseliş %80+", base & (D.r63 >= 80)),
+]
 
 out = []
 P = out.append
-P("BIST STOP / HEDEF KURALI KARŞILAŞTIRMA (2 ay)")
+P("BIST ŞİŞME TESTİ: RSI ve 63 GÜN YÜKSELİŞE GÖRE (2 ay)")
 P(f"Dönem: {min(dates):%d.%m.%Y} - {max(dates):%d.%m.%Y} · hisse: {D.h.nunique()} · satır: {len(D)}")
-P(f"Giriş: ertesi gün açılış. Pencere: {W} işlem günü. Aynı gün hedef+stop = stop sayıldı.")
-P(f"Kural: hedefe değerse hedefte çık, stopa değerse stopta çık, yoksa {W}. gün kapanış. Net %{COST} maliyet.")
-P("hedef% = hedefe stoptan önce ulaşan oran · stop% = stoptan çıkan oran · ort = ort. net getiri %")
-P("eğ / test = ort'un eğitim (ilk %70 tarih) ve test dönemindeki değeri. İkisi de yüksekse güvenilir.")
-P("Gap'ler stop hesabına katılmadı (gerçekte stop biraz daha kötü çıkar). Hayatta kalma yanlılığı var.")
-for gk, msk in G.items():
-    s = D[msk]
-    if len(s) < 100:
-        continue
-    a, b = D[msk & tr], D[msk & ~tr]
+P("GRUP = göreceli güç (RS63) üst %20 + CMF>0.05 + OBV↑. RSI = RSI14. 63g yükseliş = hissenin kendi 63 günlük getirisi.")
+P(f"Giriş: ertesi gün açılış, pencere {W} işlem günü, net %{COST} maliyet. Aynı gün hedef+stop = stop.")
+P("hedef% = stoptan önce hedefe ulaşan · stop% = stoptan çıkan · ort = ort. net getiri %")
+P("eğ / test = eğitim (ilk %70 tarih) / test dönemi ort. Gap'ler hesaba katılmadı, hayatta kalma yanlılığı var.")
+P("")
+P("Grubun ortalamaları: RSI %.0f · 63g yükseliş %%%.0f" % (D[base].rsi.mean(), D[base].r63.mean()))
+for k, r in enumerate(RULES):
     P("")
-    P(f"--- {gk} (n={len(s)}) ---")
-    P(f"{'kural':<26}{'hedef%':>7}{'stop%':>7}{'ort':>7}{'eğ':>7}{'test':>7}")
-    for k, r in enumerate(RULES):
-        P(f"{rname(r):<26}{s[f'w{k}'].mean() * 100:>6.1f}%{s[f's{k}'].mean() * 100:>6.0f}%"
+    P(f"--- KURAL: {rname(r)} ---")
+    P(f"{'grup':<24}{'n':>6}{'hedef%':>7}{'stop%':>7}{'ort':>7}{'eğ':>7}{'test':>7}")
+    for lab, msk in ROWS:
+        s = D[msk]
+        if len(s) < 50:
+            continue
+        a, b = D[msk & tr], D[msk & ~tr]
+        P(f"{lab:<24}{len(s):>6}{s[f'w{k}'].mean() * 100:>6.1f}%{s[f's{k}'].mean() * 100:>6.0f}%"
           f"{s[f'r{k}'].mean():>+7.2f}{a[f'r{k}'].mean():>+7.2f}{b[f'r{k}'].mean():>+7.2f}")
 
 text = "\n".join(out)
