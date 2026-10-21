@@ -1,0 +1,27 @@
+name: astro
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Kurulum
+        run: pip install yfinance pandas numpy ephem
+      - name: Astro testi
+        run: python astro.py
+      - name: Sonucu kaydet
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add docs/astro.html
+          git commit -m "astro testi" || echo "degisiklik yok"
+          for i in 1 2 3; do git pull --rebase && git push && break || sleep 5; done
