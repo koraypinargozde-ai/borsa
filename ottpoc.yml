@@ -1,0 +1,24 @@
+name: ottpoc
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install yfinance pandas numpy
+      - run: python ottpoc.py
+      - name: commit
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add docs/ottpoc.html
+          git commit -m "ottpoc testi" || echo "degisiklik yok"
+          git pull --rebase || true
+          git push
